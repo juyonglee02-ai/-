@@ -1,0 +1,1371 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>6교시 — NTP 동기화와 종합 실습·평가 — 통합 배포관리 수업자료</title>
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css" rel="stylesheet">
+  <link href="assets/course.css" rel="stylesheet">
+  <script src="https://cdn.jsdelivr.net/npm/mermaid@10.9.0/dist/mermaid.min.js"></script>
+</head>
+<body>
+<div class="container-fluid">
+  <div class="row">
+    <nav class="col-lg-2 course-nav py-3 d-none d-lg-block">
+      <h5 class="text-white px-3 mb-1"><i class="bi bi-mortarboard"></i> 수업자료</h5>
+      <p class="text-white-50 px-3 small mb-3">오프라인 · 6시간</p>
+      <a href="index.html" class=""><i class="bi bi-house"></i> 강의 홈</a>
+<a href="schedule.html" class=""><i class="bi bi-calendar3"></i> 시간표</a>
+<hr class="border-secondary mx-3">
+<a href="module-01.html" class=""><span class="module-num">1교시</span><br>배포관리 개요와 프로젝트 구조</a>
+<a href="module-02.html" class=""><span class="module-num">2교시</span><br>Flask 통합 배포관리 GUI</a>
+<a href="module-03.html" class=""><span class="module-num">3교시</span><br>토큰 기반 인증과 설정 파일</a>
+<a href="module-04.html" class=""><span class="module-num">4교시</span><br>C 배포 서버·클라이언트와 프로토콜</a>
+<a href="module-05.html" class=""><span class="module-num">5교시</span><br>대규모 동시 접속 — 1000대 설계</a>
+<a href="module-06.html" class="active"><span class="module-num">6교시</span><br>NTP 동기화와 종합 실습·평가</a>
+      <hr class="border-secondary mx-3">
+      <p class="text-white-50 px-3 small">프로젝트 실행 없이 브라우저로 열기</p>
+    </nav>
+    <main class="col-lg-10 py-4 px-4">
+      <div class="d-lg-none mb-3">
+        <select class="form-select" onchange="if(this.value)location.href=this.value">
+          <option value="index.html">강의 홈</option>
+          <option value="schedule.html">시간표</option>
+          <option value="module-01.html">1교시</option><option value="module-02.html">2교시</option><option value="module-03.html">3교시</option><option value="module-04.html">4교시</option><option value="module-05.html">5교시</option><option value="module-06.html">6교시</option>
+        </select>
+      </div>
+      
+<div class="sticky-top-bar">
+  <div class="d-flex justify-content-between flex-wrap gap-2"><a href="module-05.html" class="btn btn-sm btn-outline-secondary">← 이전</a><a href="index.html" class="btn btn-success">강의 홈</a></div>
+  <div class="progress progress-module mt-2"><div class="progress-bar" style="width:100%"></div></div>
+</div>
+<div class="content-card">
+  <span class="badge bg-primary mb-2">60분</span>
+  <h1 class="h3">6교시. NTP 동기화와 종합 실습·평가</h1>
+  <h6 class="text-muted mt-3">학습 목표</h6><ul><li>NTP가 배포 시스템에 필요한 이유를 설명할 수 있다</li><li>서버·클라이언트 NTP 동기화를 수행할 수 있다</li><li>전체 워크플로를 스스로 수행하고 문제를 진단할 수 있다</li></ul>
+</div>
+<div class="section-block theory"><div class="d-flex align-items-center gap-2 mb-3"><span class="badge badge-theory"><i class="bi bi-book"></i> 이론</span><h4 class="h5 mb-0">6-1. NTP와 배포 (10분)</h4></div><div class="content-card section-body">
+<p>로그·인증서·버전 비교는 <strong>정확한 시각</strong>이 전제입니다. 산업·금융·공공 현장에서는
+서버·단말 시각을 NTP로 맞춥니다.</p>
+<ul>
+  <li>Ubuntu 서버: <code>chronyc</code> / <code>systemd-timesyncd</code> (ntp_sync.c)</li>
+  <li>Windows 클라이언트: <code>w32tm /resync</code></li>
+  <li>공통: <code>TOKEN|ntp</code> 요청 시 서버가 NTP 서버 주소 전달</li>
+</ul>
+</div></div><div class="section-block theory"><div class="d-flex align-items-center gap-2 mb-3"><span class="badge badge-theory"><i class="bi bi-book"></i> 이론</span><h4 class="h5 mb-0">6-2. NTP 프로토콜 확장 (10분)</h4></div><div class="content-card section-body">
+<pre><code>요청: NTP-DEMO-SYNC-001|ntp
+응답: OK|ntp started
+      NTP|time.windows.com|ntp synced peer=time.windows.com
+      OK|ntp complete</code></pre>
+<p>Flask <strong>서버 NTP</strong> 메뉴에서 <code>ntp_server</code>, 주기, 워커 설정을 확인합니다.</p>
+</div></div><div class="section-block lab"><div class="d-flex align-items-center gap-2 mb-3"><span class="badge badge-lab"><i class="bi bi-tools"></i> 실습</span><h4 class="h5 mb-0">★ 실습 6-A: NTP 동기화 (15분)</h4></div><div class="content-card section-body">
+<ol>
+  <li>Ubuntu 서버에서 <code>sudo ./deploy_server</code> (NTP·포트 바인딩 권한)</li>
+  <li>클라이언트: <code>./deploy_client &lt;서버IP&gt; NTP-DEMO-SYNC-001 ntp ../config/deploy_targets.conf</code></li>
+  <li>Ubuntu 클라이언트: <code>chronyc tracking</code> 또는 <code>timedatectl</code>로 시각 확인</li>
+  <li>Windows 클라이언트: <code>w32tm /query /status</code></li>
+</ol>
+<p class="text-muted small">NTP 모듈·서버/클라이언트 <strong>전체 소스</strong>는 <strong>소스 보기</strong>를 펼치세요.</p>
+<div class="source-panel mt-3">
+<button class="btn btn-source-toggle w-100 d-flex justify-content-between align-items-center" type="button" data-bs-toggle="collapse" data-bs-target="#source-6-3" aria-expanded="false">
+<span><i class="bi bi-code-slash me-2"></i>소스 보기 (전체 4개 파일)</span>
+<span class="source-chevron"><i class="bi bi-chevron-down"></i></span></button>
+<div class="collapse source-collapse" id="source-6-3"><div class="source-inner">
+<div class="source-file-block mb-4">
+<div class="d-flex flex-wrap justify-content-between align-items-center gap-2 mb-2"><span class="source-file-title"><i class="bi bi-file-earmark-code"></i> NTP 동기화 (전체) <small class="text-secondary">(deploy_common/ntp_sync.c)</small></span><span><span class="badge bg-secondary">공통</span> <span class="badge bg-dark">c</span> <span class="badge bg-outline-light text-light border">78 lines</span></span></div>
+<div class="flow-diagrams mb-3"><div class="flow-block mb-2"><button class="btn btn-sm btn-flow-toggle w-100 text-start d-flex justify-content-between" type="button" data-bs-toggle="collapse" data-bs-target="#flow-c-6-3-1"><span><i class="bi bi-diagram-3"></i> NTP 동기화 플로우차트</span><i class="bi bi-chevron-down"></i></button><div class="collapse show" id="flow-c-6-3-1"><div class="mermaid flow-mermaid">flowchart TD
+  A[ntp_sync_system] --> B[first_ntp_server]
+  B --> C[ntp_configure_peer]
+  C --> D{OS?}
+  D -->|Linux| E[chronyc / ntpdate]
+  D -->|Windows| F[w32tm resync]
+  E --> G[detail 메시지]
+  F --> G</div></div></div><div class="flow-block mb-2"><button class="btn btn-sm btn-flow-toggle w-100 text-start d-flex justify-content-between" type="button" data-bs-toggle="collapse" data-bs-target="#flow-s-6-3-1"><span><i class="bi bi-arrow-left-right"></i> NTP 요청 흐름도</span><i class="bi bi-chevron-down"></i></button><div class="collapse show" id="flow-s-6-3-1"><div class="mermaid flow-mermaid">sequenceDiagram
+  participant C as client.c
+  participant S as server.c
+  participant N as ntp_sync.c
+  participant OS as OS NTP
+  C->>S: TOKEN ntp
+  S->>N: ntp_sync_system
+  N->>OS: chronyc w32tm
+  S-->>C: NTP server detail
+  C->>N: ntp_sync_clients 로컬동기화</div></div></div></div>
+<div class="symbol-guide mb-2"><button class="btn btn-sm btn-outline-light w-100 text-start d-flex justify-content-between" type="button" data-bs-toggle="collapse" data-bs-target="#sym-6-3-1"><span><i class="bi bi-journal-text"></i> 변수·함수 설명 (3개)</span><i class="bi bi-chevron-down"></i></button><div class="collapse show symbol-collapse" id="sym-6-3-1"><table class="table table-sm table-symbol mb-0"><thead><tr><th>이름</th><th>구분</th><th>설명</th></tr></thead><tbody>
+<tr><td><code>first_ntp_server()</code></td><td><span class="badge sym-kind">함수</span></td><td>쉼표 구분 목록에서 첫 NTP 서버 추출.</td></tr>
+<tr><td><code>ntp_configure_peer()</code></td><td><span class="badge sym-kind">함수</span></td><td>Ubuntu: timesyncd 재시작. Windows: w32tm /config.</td></tr>
+<tr><td><code>ntp_sync_system()</code></td><td><span class="badge sym-kind">함수</span></td><td>실제 시각 동기화. Linux: chronyc/ntpdate. Windows: w32tm /resync.</td></tr>
+</tbody></table></div></div>
+<p class="source-hint small text-secondary mb-1"><i class="bi bi-folder2-open"></i> 프로젝트에서 불러온 원본 소스입니다.</p><pre class="source-raw" data-source-file="deploy_common/ntp_sync.c"><code>/*
+ * ntp_sync.c — 시스템 시각을 NTP 서버와 맞춤
+ * Ubuntu 서버: chronyc / ntpdate
+ * Windows 클라이언트: w32tm
+ */
+#include &quot;ntp_sync.h&quot;
+#include &lt;stdio.h&gt;
+#include &lt;string.h&gt;
+#include &lt;stdlib.h&gt;
+
+/* &quot;time.windows.com,pool.ntp.org&quot; 처럼 여러 개면 첫 번째만 사용 */
+static void first_ntp_server(const char *ntp_server, char *out, int out_len) {
+    const char *comma;
+    if (!ntp_server || !ntp_server[0]) {
+        strncpy(out, &quot;pool.ntp.org&quot;, (size_t)out_len - 1);
+        out[out_len - 1] = &#x27;\0&#x27;;
+        return;
+    }
+    comma = strchr(ntp_server, &#x27;,&#x27;);
+    if (comma) {
+        size_t n = (size_t)(comma - ntp_server);
+        if (n &gt;= (size_t)out_len) n = (size_t)out_len - 1;
+        memcpy(out, ntp_server, n);
+        out[n] = &#x27;\0&#x27;;
+    } else {
+        strncpy(out, ntp_server, (size_t)out_len - 1);
+        out[out_len - 1] = &#x27;\0&#x27;;
+    }
+}
+
+/* OS에 NTP 서버 주소를 등록 (동기화 전 단계) */
+int ntp_configure_peer(const char *ntp_server, char *detail, int detail_len) {
+    char peer[260];
+    char cmd[1024];
+    first_ntp_server(ntp_server, peer, sizeof(peer));
+#ifdef _WIN32
+    snprintf(cmd, sizeof(cmd),
+        &quot;w32tm /config /manualpeerlist:\&quot;%s\&quot; /syncfromflags:manual /update 2&gt;nul&quot;, peer);
+    if (system(cmd) != 0) {
+        snprintf(detail, (size_t)detail_len, &quot;w32tm config failed&quot;);
+        return -1;
+    }
+    snprintf(detail, (size_t)detail_len, &quot;peer=%s configured&quot;, peer);
+#else
+    (void)cmd;
+    snprintf(detail, (size_t)detail_len, &quot;peer=%s configured (linux)&quot;, peer);
+#endif
+    return 0;
+}
+
+/* 실제로 현재 시각을 NTP 서버에 맞춤. 관리자 권한이 필요할 수 있음 */
+int ntp_sync_system(const char *ntp_server, char *detail, int detail_len) {
+    char peer[260];
+    first_ntp_server(ntp_server, peer, sizeof(peer));
+    ntp_configure_peer(ntp_server, detail, detail_len);
+
+#ifdef _WIN32
+    if (system(&quot;w32tm /resync /force 2&gt;nul&quot;) != 0) {
+        snprintf(detail, (size_t)detail_len, &quot;w32tm resync failed (admin?) peer=%s&quot;, peer);
+        return -1;
+    }
+    snprintf(detail, (size_t)detail_len, &quot;ntp synced peer=%s&quot;, peer);
+#else
+    {
+        char cmd[1024];
+        snprintf(cmd, sizeof(cmd), &quot;chronyc -a makestep 2&gt;/dev/null&quot;);
+        if (system(cmd) != 0) {
+            snprintf(cmd, sizeof(cmd), &quot;ntpdate -u %s 2&gt;/dev/null&quot;, peer);
+            if (system(cmd) != 0) {
+                snprintf(detail, (size_t)detail_len, &quot;ntp sync failed peer=%s&quot;, peer);
+                return -1;
+            }
+        }
+    }
+    snprintf(detail, (size_t)detail_len, &quot;ntp synced peer=%s&quot;, peer);
+#endif
+    return 0;
+}
+</code></pre></div>
+<div class="source-file-block mb-4">
+<div class="d-flex flex-wrap justify-content-between align-items-center gap-2 mb-2"><span class="source-file-title"><i class="bi bi-file-earmark-code"></i> NTP API 헤더 <small class="text-secondary">(deploy_common/ntp_sync.h)</small></span><span><span class="badge bg-secondary">공통</span> <span class="badge bg-dark">c</span> <span class="badge bg-outline-light text-light border">8 lines</span></span></div>
+<div class="flow-diagrams mb-3"><div class="flow-block mb-2"><button class="btn btn-sm btn-flow-toggle w-100 text-start d-flex justify-content-between" type="button" data-bs-toggle="collapse" data-bs-target="#flow-c-6-3-2"><span><i class="bi bi-diagram-3"></i> NTP API 호출 관계</span><i class="bi bi-chevron-down"></i></button><div class="collapse show" id="flow-c-6-3-2"><div class="mermaid flow-mermaid">flowchart LR
+  S[server.c] --> H[ntp_sync.h]
+  C[client.c] --> H
+  H --> N[ntp_sync.c]</div></div></div></div>
+<div class="symbol-guide mb-2"><button class="btn btn-sm btn-outline-light w-100 text-start d-flex justify-content-between" type="button" data-bs-toggle="collapse" data-bs-target="#sym-6-3-2"><span><i class="bi bi-journal-text"></i> 변수·함수 설명 (1개)</span><i class="bi bi-chevron-down"></i></button><div class="collapse show symbol-collapse" id="sym-6-3-2"><table class="table table-sm table-symbol mb-0"><thead><tr><th>이름</th><th>구분</th><th>설명</th></tr></thead><tbody>
+<tr><td><code>ntp_sync_system()</code></td><td><span class="badge sym-kind">선언</span></td><td>서버·클라이언트 공통 진입점.</td></tr>
+</tbody></table></div></div>
+<p class="source-hint small text-secondary mb-1"><i class="bi bi-folder2-open"></i> 프로젝트에서 불러온 원본 소스입니다.</p><pre class="source-raw" data-source-file="deploy_common/ntp_sync.h"><code>#ifndef NTP_SYNC_H
+#define NTP_SYNC_H
+
+/* 서버/클라이언트 시스템 시각을 NTP 서버와 동기화 */
+int ntp_sync_system(const char *ntp_server, char *detail, int detail_len);
+int ntp_configure_peer(const char *ntp_server, char *detail, int detail_len);
+
+#endif
+</code></pre></div>
+<div class="source-file-block mb-4">
+<div class="d-flex flex-wrap justify-content-between align-items-center gap-2 mb-2"><span class="source-file-title"><i class="bi bi-file-earmark-code"></i> 서버 — handle_ntp 포함 전체 <small class="text-secondary">(deploy_server/server.c)</small></span><span><span class="badge bg-success">Ubuntu / Linux</span> <span class="badge bg-dark">c</span> <span class="badge bg-outline-light text-light border">395 lines</span></span></div>
+<div class="flow-diagrams mb-3"><div class="flow-block mb-2"><button class="btn btn-sm btn-flow-toggle w-100 text-start d-flex justify-content-between" type="button" data-bs-toggle="collapse" data-bs-target="#flow-c-6-3-3"><span><i class="bi bi-diagram-3"></i> 배포 서버 main 플로우차트</span><i class="bi bi-chevron-down"></i></button><div class="collapse show" id="flow-c-6-3-3"><div class="mermaid flow-mermaid">flowchart TD
+  START[main 시작] --> A[설정·토큰 로드]
+  A --> B[package_cache_load RAM]
+  B --> C[NTP 기동동기화]
+  C --> D[thread_pool_create]
+  D --> E[socket bind listen]
+  E --> F{accept 연결}
+  F --> G{max_concurrent?}
+  G -->|초과| H[ERR server busy]
+  G -->|OK| I[thread_pool_submit]
+  I --> J[client_worker]
+  J --> K[handle_client_socket]
+  K --> F</div></div></div><div class="flow-block mb-2"><button class="btn btn-sm btn-flow-toggle w-100 text-start d-flex justify-content-between" type="button" data-bs-toggle="collapse" data-bs-target="#flow-s-6-3-3"><span><i class="bi bi-arrow-left-right"></i> 업데이트 배포 프로토콜 흐름도</span><i class="bi bi-chevron-down"></i></button><div class="collapse show" id="flow-s-6-3-3"><div class="mermaid flow-mermaid">sequenceDiagram
+  participant C as 클라이언트
+  participant S as server.c
+  participant Cache as RAM캐시
+  C->>S: TOKEN update
+  S->>S: validate_token
+  S-->>C: OK update started
+  loop 각 파일
+    S->>Cache: send_cached
+    Cache-->>C: FILE name size
+    Cache-->>C: 바이너리
+    S-->>C: FILE_END
+  end
+  S-->>C: OK update complete</div></div></div></div>
+<div class="symbol-guide mb-2"><button class="btn btn-sm btn-outline-light w-100 text-start d-flex justify-content-between" type="button" data-bs-toggle="collapse" data-bs-target="#sym-6-3-3"><span><i class="bi bi-journal-text"></i> 변수·함수 설명 (2개)</span><i class="bi bi-chevron-down"></i></button><div class="collapse show symbol-collapse" id="sym-6-3-3"><table class="table table-sm table-symbol mb-0"><thead><tr><th>이름</th><th>구분</th><th>설명</th></tr></thead><tbody>
+<tr><td><code>handle_ntp()</code></td><td><span class="badge sym-kind">함수</span></td><td>서버 NTP 동기화 후 NTP|server|detail 줄 전송.</td></tr>
+<tr><td><code>ntp_background_thread()</code></td><td><span class="badge sym-kind">함수</span></td><td>ntp_sync_interval_min 마다 재동기화.</td></tr>
+</tbody></table></div></div>
+<p class="source-hint small text-secondary mb-1"><i class="bi bi-folder2-open"></i> 프로젝트에서 불러온 원본 소스입니다.</p><pre class="source-raw" data-source-file="deploy_server/server.c"><code>/*
+ * server.c — 배포 서버 (Ubuntu 에서 실행 권장)
+ *
+ * 하는 일:
+ *   1) TCP 포트 listen (기본 9900)
+ *   2) 클라이언트 접속마다 스레드 풀에 작업 전달
+ *   3) 토큰 검증 후 패키지 파일 전송 (RAM 캐시 사용)
+ *   4) NTP 동기화 요청 처리
+ *
+ * 실행 예:
+ *   ./deploy_server ../config/deploy_targets.conf ../config/tokens.conf
+ */
+#include &quot;../deploy_common/config.h&quot;
+#include &quot;../deploy_common/thread_pool.h&quot;
+#include &quot;../deploy_common/package_cache.h&quot;
+#include &quot;../deploy_common/ntp_sync.h&quot;
+#include &lt;stdio.h&gt;
+#include &lt;string.h&gt;
+#include &lt;stdlib.h&gt;
+
+#ifdef _WIN32
+  #include &lt;winsock2.h&gt;
+  #include &lt;ws2tcpip.h&gt;
+  #pragma comment(lib, &quot;ws2_32.lib&quot;)
+  typedef int socklen_t;
+  #define CLOSE_SOCKET closesocket
+  #define sleep_sec(s) Sleep((s) * 1000)
+#else
+  #include &lt;unistd.h&gt;
+  #include &lt;pthread.h&gt;
+  #include &lt;sys/socket.h&gt;
+  #include &lt;netinet/in.h&gt;
+  #include &lt;arpa/inet.h&gt;
+  #define SOCKET int
+  #define INVALID_SOCKET (-1)
+  #define SOCKET_ERROR (-1)
+  #define CLOSE_SOCKET close
+  #define sleep_sec(s) sleep(s)
+#endif
+
+typedef struct {
+    SOCKET sock;
+} client_job_t;
+
+static deploy_config_t g_cfg;              /* 설정 파일 내용 */
+static token_entry_t g_tokens[MAX_TOKENS]; /* 허용 토큰 배열 */
+static int g_token_count;
+static package_cache_t g_cache;            /* RAM에 올려 둔 패키지 */
+static thread_pool_t *g_pool;              /* 동시 처리용 스레드 풀 */
+static volatile long g_active_clients;       /* 지금 처리 중인 연결 수 */
+static volatile int g_shutdown;            /* 서버 종료 플래그 */
+
+static int send_line(SOCKET sock, const char *msg) {
+    char buf[MAX_LINE];
+    snprintf(buf, sizeof(buf), &quot;%s\n&quot;, msg);
+    return send(sock, buf, (int)strlen(buf), 0) &gt; 0 ? 0 : -1;
+}
+
+static int recv_line(SOCKET sock, char *buf, int size) {
+    int n = 0;
+    char c;
+    while (n &lt; size - 1) {
+        if (recv(sock, &amp;c, 1, 0) &lt;= 0) return -1;
+        if (c == &#x27;\n&#x27;) break;
+        if (c != &#x27;\r&#x27;) buf[n++] = c;
+    }
+    buf[n] = &#x27;\0&#x27;;
+    return n;
+}
+
+/* 메모리 캐시에 있는 파일을 클라이언트로 전송 (디스크 읽기 없음) */
+static int send_cached(SOCKET sock, const cached_file_t *cf) {
+    char header[MAX_LINE];
+    long sent = 0;
+    int chunk;
+    snprintf(header, sizeof(header), &quot;FILE|%s|%ld&quot;, cf-&gt;name, cf-&gt;size);
+    if (send_line(sock, header) != 0) return -1;
+    while (sent &lt; cf-&gt;size) {
+        chunk = (int)((cf-&gt;size - sent) &gt; 8192 ? 8192 : (cf-&gt;size - sent));
+        if (send(sock, cf-&gt;data + sent, chunk, 0) &lt;= 0) return -1;
+        sent += chunk;
+    }
+    return send_line(sock, &quot;FILE_END&quot;);
+}
+
+static long file_size_path(const char *path) {
+    FILE *f = fopen(path, &quot;rb&quot;);
+    long sz;
+    if (!f) return -1;
+    fseek(f, 0, SEEK_END);
+    sz = ftell(f);
+    fclose(f);
+    return sz;
+}
+
+static int send_file_disk(SOCKET sock, const char *filepath, const char *name) {
+    FILE *f;
+    char buf[8192];
+    size_t rd;
+    long sz;
+    char header[MAX_LINE];
+    long sent = 0;
+
+    sz = file_size_path(filepath);
+    if (sz &lt; 0) return -1;
+    snprintf(header, sizeof(header), &quot;FILE|%s|%ld&quot;, name, sz);
+    if (send_line(sock, header) != 0) return -1;
+    f = fopen(filepath, &quot;rb&quot;);
+    if (!f) return -1;
+    while (sent &lt; sz &amp;&amp; (rd = fread(buf, 1, sizeof(buf), f)) &gt; 0) {
+        if (send(sock, buf, (int)rd, 0) &lt;= 0) {
+            fclose(f);
+            return -1;
+        }
+        sent += (long)rd;
+    }
+    fclose(f);
+    return send_line(sock, &quot;FILE_END&quot;);
+}
+
+static deploy_action_t parse_action(const char *s) {
+    if (strcmp(s, &quot;update&quot;) == 0) return ACTION_UPDATE;
+    if (strcmp(s, &quot;migration&quot;) == 0) return ACTION_MIGRATION;
+    if (strcmp(s, &quot;ntp&quot;) == 0) return ACTION_NTP;
+    return ACTION_UNKNOWN;
+}
+
+static void handle_ntp(SOCKET sock) {
+    char detail[MAX_LINE];
+    if (ntp_sync_system(g_cfg.ntp_server, detail, sizeof(detail)) == 0) {
+        char msg[MAX_LINE];
+        snprintf(msg, sizeof(msg), &quot;NTP|%s|%s&quot;, g_cfg.ntp_server, detail);
+        send_line(sock, &quot;OK|ntp started&quot;);
+        send_line(sock, msg);
+        send_line(sock, &quot;OK|ntp complete&quot;);
+    } else {
+        send_line(sock, &quot;ERR|ntp sync failed&quot;);
+    }
+}
+
+static void send_packages(SOCKET sock, deploy_action_t action) {
+    int i, n;
+    const cached_file_t *cf;
+    char filepath[MAX_PATH_LEN];
+
+    if (action == ACTION_UPDATE) n = g_cfg.update_file_count;
+    else n = g_cfg.migration_file_count;
+
+    for (i = 0; i &lt; n; i++) {
+        if (g_cache.loaded &amp;&amp; g_cfg.package_cache_enabled) {
+            cf = (action == ACTION_UPDATE)
+                     ? package_cache_update(&amp;g_cache, i)
+                     : package_cache_migration(&amp;g_cache, i);
+            if (cf &amp;&amp; send_cached(sock, cf) != 0) {
+                send_line(sock, &quot;ERR|cache send failed&quot;);
+                return;
+            }
+        } else {
+            if (action == ACTION_UPDATE)
+                snprintf(filepath, sizeof(filepath), &quot;%s/%s&quot;,
+                         g_cfg.package_dir, g_cfg.update_files[i]);
+            else
+                snprintf(filepath, sizeof(filepath), &quot;%s/%s&quot;,
+                         g_cfg.package_dir, g_cfg.migration_files[i]);
+            if (action == ACTION_UPDATE)
+                send_file_disk(sock, filepath, g_cfg.update_files[i]);
+            else
+                send_file_disk(sock, filepath, g_cfg.migration_files[i]);
+        }
+    }
+}
+
+/* 한 클라이언트 연결 처리: 토큰|action 받고 파일 전송 또는 NTP */
+static void handle_client_socket(SOCKET client_sock) {
+    char line[MAX_LINE];
+    char token[MAX_TOKEN_LEN];
+    char action_str[32];
+    char *sep;
+    deploy_action_t action;
+
+    if (recv_line(client_sock, line, sizeof(line)) &lt; 0) {
+        send_line(client_sock, &quot;ERR|read failed&quot;);
+        return;
+    }
+
+    strncpy(token, line, MAX_TOKEN_LEN - 1);
+    token[MAX_TOKEN_LEN - 1] = &#x27;\0&#x27;;
+    sep = strchr(token, &#x27;|&#x27;);
+    if (!sep) {
+        send_line(client_sock, &quot;ERR|format: TOKEN|action&quot;);
+        return;
+    }
+    *sep = &#x27;\0&#x27;;
+    strncpy(action_str, sep + 1, sizeof(action_str) - 1);
+    action = parse_action(action_str);
+    if (action == ACTION_UNKNOWN) {
+        send_line(client_sock, &quot;ERR|unknown action&quot;);
+        return;
+    }
+
+    if (!validate_token(token, action, g_tokens, g_token_count)) {
+        send_line(client_sock, &quot;ERR|invalid or expired token&quot;);
+        return;
+    }
+
+    if (action == ACTION_NTP) {
+        handle_ntp(client_sock);
+        return;
+    }
+
+    if (action == ACTION_UPDATE) {
+        send_line(client_sock, &quot;OK|update started&quot;);
+        send_packages(client_sock, ACTION_UPDATE);
+        send_line(client_sock, &quot;OK|update complete&quot;);
+    } else {
+        send_line(client_sock, &quot;OK|migration started&quot;);
+        send_packages(client_sock, ACTION_MIGRATION);
+        send_line(client_sock, &quot;OK|migration complete&quot;);
+    }
+}
+
+/* 스레드 풀에서 실행되는 함수 — 실제 배포 작업 */
+static void client_worker(void *arg) {
+    client_job_t *job = (client_job_t *)arg;
+    handle_client_socket(job-&gt;sock);
+    CLOSE_SOCKET(job-&gt;sock);
+    free(job);
+#ifdef _WIN32
+    InterlockedDecrement((volatile LONG *)&amp;g_active_clients);
+#else
+    __sync_fetch_and_sub(&amp;g_active_clients, 1);
+#endif
+}
+
+#ifdef _WIN32
+static DWORD WINAPI ntp_background_thread(LPVOID unused) {
+    char detail[MAX_LINE];
+    (void)unused;
+    while (!g_shutdown) {
+        int mins = g_cfg.ntp_sync_interval_min &gt; 0 ? g_cfg.ntp_sync_interval_min : 30;
+        sleep_sec(mins * 60);
+        if (g_shutdown) break;
+        ntp_sync_system(g_cfg.ntp_server, detail, sizeof(detail));
+        printf(&quot;[NTP] periodic sync: %s\n&quot;, detail);
+    }
+    return 0;
+}
+#else
+static void *ntp_background_thread(void *unused) {
+    char detail[MAX_LINE];
+    (void)unused;
+    while (!g_shutdown) {
+        int mins = g_cfg.ntp_sync_interval_min &gt; 0 ? g_cfg.ntp_sync_interval_min : 30;
+        sleep_sec(mins * 60);
+        if (g_shutdown) break;
+        ntp_sync_system(g_cfg.ntp_server, detail, sizeof(detail));
+        printf(&quot;[NTP] periodic sync: %s\n&quot;, detail);
+    }
+    return NULL;
+}
+#endif
+
+/* 서버 시작: 설정 로드 → 캐시 로드 → NTP → listen 루프 */
+int main(int argc, char *argv[]) {
+    const char *cfg_path = &quot;../config/deploy_targets.conf&quot;;
+    const char *tok_path = &quot;../config/tokens.conf&quot;;
+    SOCKET listen_sock, client_sock;
+    struct sockaddr_in addr, client_addr;
+    socklen_t client_len;
+    char ntp_detail[MAX_LINE];
+
+#ifdef _WIN32
+    WSADATA wsa;
+#endif
+#ifndef _WIN32
+    pthread_t ntp_thread;
+#endif
+
+#ifdef _WIN32
+    if (WSAStartup(MAKEWORD(2, 2), &amp;wsa) != 0) return 1;
+#endif
+
+    if (argc &gt; 1) cfg_path = argv[1];
+    if (argc &gt; 2) tok_path = argv[2];
+
+    token_lock_init();
+    if (load_deploy_config(cfg_path, &amp;g_cfg) != 0) {
+        fprintf(stderr, &quot;Cannot load config: %s\n&quot;, cfg_path);
+        return 1;
+    }
+    g_token_count = load_tokens(tok_path, g_tokens, MAX_TOKENS);
+
+    if (g_cfg.package_cache_enabled) {
+        if (package_cache_load(&amp;g_cache, &amp;g_cfg) == 0)
+            printf(&quot;Package cache: update=%d migration=%d files in RAM\n&quot;,
+                   g_cache.update_count, g_cache.migration_count);
+        else
+            printf(&quot;Warning: package cache load failed, using disk I/O\n&quot;);
+    }
+
+    if (g_cfg.ntp_sync_on_startup) {
+        if (ntp_sync_system(g_cfg.ntp_server, ntp_detail, sizeof(ntp_detail)) == 0)
+            printf(&quot;[NTP] startup sync OK: %s\n&quot;, ntp_detail);
+        else
+            printf(&quot;[NTP] startup sync skipped/failed: %s (run as admin on Windows)\n&quot;, ntp_detail);
+    }
+
+#ifdef _WIN32
+    CreateThread(NULL, 0, ntp_background_thread, NULL, 0, NULL);
+#else
+    pthread_create(&amp;ntp_thread, NULL, ntp_background_thread, NULL);
+#endif
+
+    g_pool = thread_pool_create(g_cfg.worker_threads, g_cfg.max_queue_size);
+    if (!g_pool) {
+        fprintf(stderr, &quot;thread pool create failed\n&quot;);
+        return 1;
+    }
+
+    printf(&quot;Deploy server (high-concurrency)\n&quot;);
+    printf(&quot;  port=%d workers=%d backlog=%d max_concurrent=%d tokens=%d\n&quot;,
+           g_cfg.server_port, g_cfg.worker_threads, g_cfg.listen_backlog,
+           g_cfg.max_concurrent, g_token_count);
+
+    listen_sock = socket(AF_INET, SOCK_STREAM, 0);
+    if (listen_sock == INVALID_SOCKET) return 1;
+
+#ifndef _WIN32
+    { int opt = 1; setsockopt(listen_sock, SOL_SOCKET, SO_REUSEADDR, &amp;opt, sizeof(opt)); }
+#endif
+
+    memset(&amp;addr, 0, sizeof(addr));
+    addr.sin_family = AF_INET;
+    addr.sin_addr.s_addr = INADDR_ANY;
+    addr.sin_port = htons((unsigned short)g_cfg.server_port);
+
+    if (bind(listen_sock, (struct sockaddr *)&amp;addr, sizeof(addr)) == SOCKET_ERROR ||
+        listen(listen_sock, g_cfg.listen_backlog) == SOCKET_ERROR) {
+        fprintf(stderr, &quot;bind/listen failed\n&quot;);
+        return 1;
+    }
+
+    printf(&quot;Listening ... (ready for 1000+ clients)\n&quot;);
+    while (1) {
+        client_len = sizeof(client_addr);
+        client_sock = accept(listen_sock, (struct sockaddr *)&amp;client_addr, &amp;client_len);
+        if (client_sock == INVALID_SOCKET) continue;
+
+        if (g_active_clients &gt;= g_cfg.max_concurrent) {
+            send_line(client_sock, &quot;ERR|server busy, retry later&quot;);
+            CLOSE_SOCKET(client_sock);
+            continue;
+        }
+
+        if (thread_pool_queue_size(g_pool) &gt;= g_cfg.max_queue_size) {
+            send_line(client_sock, &quot;ERR|queue full, retry later&quot;);
+            CLOSE_SOCKET(client_sock);
+            continue;
+        }
+
+        {
+            client_job_t *job = (client_job_t *)malloc(sizeof(client_job_t));
+            if (!job) {
+                CLOSE_SOCKET(client_sock);
+                continue;
+            }
+            job-&gt;sock = client_sock;
+#ifdef _WIN32
+            InterlockedIncrement((volatile LONG *)&amp;g_active_clients);
+#else
+            __sync_fetch_and_add(&amp;g_active_clients, 1);
+#endif
+            if (thread_pool_submit(g_pool, client_worker, job) != 0) {
+#ifdef _WIN32
+                InterlockedDecrement((volatile LONG *)&amp;g_active_clients);
+#else
+                __sync_fetch_and_sub(&amp;g_active_clients, 1);
+#endif
+                send_line(client_sock, &quot;ERR|submit failed&quot;);
+                CLOSE_SOCKET(client_sock);
+                free(job);
+            }
+        }
+    }
+
+    g_shutdown = 1;
+    package_cache_free(&amp;g_cache);
+    thread_pool_destroy(g_pool);
+    token_lock_shutdown();
+    CLOSE_SOCKET(listen_sock);
+#ifdef _WIN32
+    WSACleanup();
+#endif
+    return 0;
+}
+</code></pre></div>
+<div class="source-file-block mb-4">
+<div class="d-flex flex-wrap justify-content-between align-items-center gap-2 mb-2"><span class="source-file-title"><i class="bi bi-file-earmark-code"></i> 클라이언트 — NTP 응답 처리 포함 전체 <small class="text-secondary">(deploy_client/client.c)</small></span><span><span class="badge bg-secondary">공통</span> <span class="badge bg-dark">c</span> <span class="badge bg-outline-light text-light border">261 lines</span></span></div>
+<div class="flow-diagrams mb-3"><div class="flow-block mb-2"><button class="btn btn-sm btn-flow-toggle w-100 text-start d-flex justify-content-between" type="button" data-bs-toggle="collapse" data-bs-target="#flow-c-6-3-4"><span><i class="bi bi-diagram-3"></i> 배포 클라이언트 main 플로우차트</span><i class="bi bi-chevron-down"></i></button><div class="collapse show" id="flow-c-6-3-4"><div class="mermaid flow-mermaid">flowchart TD
+  START[main argv] --> A[load_deploy_config]
+  A --> B[TCP connect 서버]
+  B -->|실패| X[report_flask failed]
+  B -->|성공| C["send TOKEN action"]
+  C --> D{응답 줄 읽기}
+  D -->|FILE| E[recv_file 저장]
+  D -->|ERR| X
+  D -->|OK complete| F[report_flask success]
+  E --> D</div></div></div><div class="flow-block mb-2"><button class="btn btn-sm btn-flow-toggle w-100 text-start d-flex justify-content-between" type="button" data-bs-toggle="collapse" data-bs-target="#flow-s-6-3-4"><span><i class="bi bi-arrow-left-right"></i> 클라이언트·서버 상호작용 흐름도</span><i class="bi bi-chevron-down"></i></button><div class="collapse show" id="flow-s-6-3-4"><div class="mermaid flow-mermaid">sequenceDiagram
+  participant PC as 클라이언트 PC
+  participant CL as client.c
+  participant SV as Ubuntu서버
+  PC->>CL: deploy_client 실행
+  CL->>SV: connect port 9900
+  CL->>SV: UPD token update
+  SV-->>CL: OK update started
+  SV-->>CL: FILE app.bin size
+  CL->>CL: installed 저장
+  SV-->>CL: OK update complete
+  CL->>PC: Flask api report 선택</div></div></div></div>
+<div class="symbol-guide mb-2"><button class="btn btn-sm btn-outline-light w-100 text-start d-flex justify-content-between" type="button" data-bs-toggle="collapse" data-bs-target="#sym-6-3-4"><span><i class="bi bi-journal-text"></i> 변수·함수 설명 (2개)</span><i class="bi bi-chevron-down"></i></button><div class="collapse show symbol-collapse" id="sym-6-3-4"><table class="table table-sm table-symbol mb-0"><thead><tr><th>이름</th><th>구분</th><th>설명</th></tr></thead><tbody>
+<tr><td><code>NTP|...</code></td><td><span class="badge sym-kind">프로토콜</span></td><td>서버가 보낸 NTP 서버 주소 파싱.</td></tr>
+<tr><td><code>ntp_sync_clients</code></td><td><span class="badge sym-kind">설정</span></td><td>1이면 클라이언트도 로컬 NTP 동기화 시도.</td></tr>
+</tbody></table></div></div>
+<p class="source-hint small text-secondary mb-1"><i class="bi bi-folder2-open"></i> 프로젝트에서 불러온 원본 소스입니다.</p><pre class="source-raw" data-source-file="deploy_client/client.c"><code>/*
+ * client.c — 배포 클라이언트 (Ubuntu / Windows 공통 소스)
+ *
+ * 하는 일:
+ *   1) Ubuntu 배포 서버에 TCP로 접속
+ *   2) &quot;토큰|update&quot; 형식으로 요청 전송
+ *   3) 서버가 보내는 파일을 받아 installed/ 폴더에 저장
+ *   4) (선택) Flask 웹에 결과 보고
+ *
+ * 실행 예:
+ *   ./deploy_client 192.168.0.10 UPD-xxx-001 update ../config/deploy_targets.conf
+ *   deploy_client.exe 192.168.0.10 UPD-xxx-001 update ..\\config\\deploy_targets.conf
+ */
+#include &quot;../deploy_common/config.h&quot;
+#include &quot;../deploy_common/ntp_sync.h&quot;
+#include &lt;stdio.h&gt;
+#include &lt;string.h&gt;
+#include &lt;stdlib.h&gt;
+#include &lt;sys/stat.h&gt;
+
+#ifdef _WIN32
+  #include &lt;direct.h&gt;
+  #include &lt;winsock2.h&gt;
+  #include &lt;ws2tcpip.h&gt;
+  #pragma comment(lib, &quot;ws2_32.lib&quot;)
+  #define CLOSE_SOCKET closesocket
+  #define MKDIR(p) _mkdir(p)
+#else
+  #include &lt;unistd.h&gt;
+  #include &lt;sys/socket.h&gt;
+  #include &lt;netinet/in.h&gt;
+  #include &lt;arpa/inet.h&gt;
+  #define SOCKET int
+  #define INVALID_SOCKET (-1)
+  #define SOCKET_ERROR (-1)
+  #define CLOSE_SOCKET close
+  #define MKDIR(p) mkdir(p, 0755)
+#endif
+
+static deploy_config_t g_cfg;  /* deploy_targets.conf 에서 읽은 설정 */
+
+/* 프로토콜: 한 줄 텍스트 보내기 (끝에 \n 붙임) */
+static int send_line(SOCKET sock, const char *msg) {
+    char buf[MAX_LINE];
+    snprintf(buf, sizeof(buf), &quot;%s\n&quot;, msg);
+    return send(sock, buf, (int)strlen(buf), 0) &gt; 0 ? 0 : -1;
+}
+
+static int recv_line(SOCKET sock, char *buf, int size) {
+    int n = 0;
+    char c;
+    while (n &lt; size - 1) {
+        if (recv(sock, &amp;c, 1, 0) &lt;= 0) return -1;
+        if (c == &#x27;\n&#x27;) break;
+        if (c != &#x27;\r&#x27;) buf[n++] = c;
+    }
+    buf[n] = &#x27;\0&#x27;;
+    return n;
+}
+
+static void ensure_dir(const char *path) {
+    char tmp[MAX_PATH_LEN];
+    char *p;
+    strncpy(tmp, path, MAX_PATH_LEN - 1);
+    for (p = tmp + 1; *p; p++) {
+        if (*p == &#x27;/&#x27; || *p == &#x27;\\&#x27;) {
+            *p = &#x27;\0&#x27;;
+            MKDIR(tmp);
+            *p = &#x27;/&#x27;;
+        }
+    }
+    MKDIR(tmp);
+}
+
+/* TCP는 한 번에 원하는 만큼 안 올 수 있어서, 정확히 need 바이트만큼 받을 때까지 반복 */
+static int recv_exact(SOCKET sock, char *buf, int need) {
+    int got = 0, n;
+    while (got &lt; need) {
+        n = recv(sock, buf + got, need - got, 0);
+        if (n &lt;= 0) return -1;
+        got += n;
+    }
+    return got;
+}
+
+/*
+ * 서버가 보낸 FILE|이름|크기 메시지 다음의 바이너리를 파일로 저장
+ */
+static int recv_file(SOCKET sock, const char *install_dir, const char *line) {
+    char filename[MAX_PATH_LEN];
+    long expected = 0, received = 0;
+    char outpath[MAX_PATH_LEN];
+    FILE *f;
+    char buf[4096];
+    int n, chunk;
+    char endline[MAX_LINE];
+
+    if (sscanf(line, &quot;FILE|%259[^|]|%ld&quot;, filename, &amp;expected) &lt; 2)
+        return -1;
+
+    snprintf(outpath, sizeof(outpath), &quot;%s/%s&quot;, install_dir, filename);
+    ensure_dir(install_dir);
+    f = fopen(outpath, &quot;wb&quot;);
+    if (!f) {
+        fprintf(stderr, &quot;Cannot write %s\n&quot;, outpath);
+        return -1;
+    }
+    printf(&quot;Receiving -&gt; %s (%ld bytes)\n&quot;, outpath, expected);
+
+    while (received &lt; expected) {
+        chunk = (int)((expected - received) &lt; (long)sizeof(buf) ? (expected - received) : (long)sizeof(buf));
+        n = recv_exact(sock, buf, chunk);
+        if (n &lt;= 0) {
+            fclose(f);
+            return -1;
+        }
+        fwrite(buf, 1, (size_t)n, f);
+        received += n;
+    }
+    fclose(f);
+
+    if (recv_line(sock, endline, sizeof(endline)) &lt; 0 || strcmp(endline, &quot;FILE_END&quot;) != 0) {
+        fprintf(stderr, &quot;Expected FILE_END, got: %s\n&quot;, endline);
+        return -1;
+    }
+    printf(&quot;Saved %s\n&quot;, outpath);
+    return 0;
+}
+
+static void report_flask(const char *token, const char *status, const char *message) {
+    char cmd[MAX_LINE * 2];
+    if (g_cfg.flask_report_url[0] == &#x27;\0&#x27;) return;
+#ifdef _WIN32
+    snprintf(cmd, sizeof(cmd),
+        &quot;powershell -Command \&quot;Invoke-RestMethod -Uri &#x27;%s&#x27; -Method POST &quot;
+        &quot;-ContentType &#x27;application/json&#x27; -Body &#x27;{\\\&quot;token\\\&quot;:\\\&quot;%s\\\&quot;,&quot;
+        &quot;\\\&quot;status\\\&quot;:\\\&quot;%s\\\&quot;,\\\&quot;message\\\&quot;:\\\&quot;%s\\\&quot;}&#x27;\&quot; 2&gt;nul&quot;,
+        g_cfg.flask_report_url, token, status, message);
+#else
+    snprintf(cmd, sizeof(cmd),
+        &quot;curl -s -X POST -H &#x27;Content-Type: application/json&#x27; &quot;
+        &quot;-d &#x27;{\&quot;token\&quot;:\&quot;%s\&quot;,\&quot;status\&quot;:\&quot;%s\&quot;,\&quot;message\&quot;:\&quot;%s\&quot;}&#x27; &#x27;%s&#x27; 2&gt;/dev/null&quot;,
+        token, status, message, g_cfg.flask_report_url);
+#endif
+    system(cmd);
+}
+
+/*
+ * main — 프로그램 시작점
+ * argv[1]=서버IP, argv[2]=토큰, argv[3]=update|migration|ntp
+ */
+int main(int argc, char *argv[]) {
+    const char *host = &quot;127.0.0.1&quot;;
+    const char *token;
+    const char *action_str;
+    const char *cfg_path = &quot;../config/deploy_targets.conf&quot;;
+    SOCKET sock;
+    struct sockaddr_in addr;
+    char req[MAX_LINE];
+    char line[MAX_LINE];
+    int port;
+
+#ifdef _WIN32
+    WSADATA wsa;
+#endif
+
+    if (argc &lt; 4) {
+        fprintf(stderr, &quot;Usage: %s &lt;host&gt; &lt;token&gt; &lt;update|migration|ntp&gt; [config]\n&quot;, argv[0]);
+        return 1;
+    }
+    host = argv[1];
+    token = argv[2];
+    action_str = argv[3];
+    if (argc &gt; 4) cfg_path = argv[4];
+
+    if (load_deploy_config(cfg_path, &amp;g_cfg) != 0) {
+        fprintf(stderr, &quot;Cannot load config\n&quot;);
+        return 1;
+    }
+    port = g_cfg.server_port;
+
+#ifdef _WIN32
+    WSAStartup(MAKEWORD(2, 2), &amp;wsa);
+#endif
+
+    sock = socket(AF_INET, SOCK_STREAM, 0);
+    if (sock == INVALID_SOCKET) return 1;
+
+    memset(&amp;addr, 0, sizeof(addr));
+    addr.sin_family = AF_INET;
+    addr.sin_port = htons((unsigned short)port);
+#ifdef _WIN32
+    addr.sin_addr.s_addr = inet_addr(host);
+    if (addr.sin_addr.s_addr == INADDR_NONE) {
+        fprintf(stderr, &quot;Invalid host\n&quot;);
+        return 1;
+    }
+#else
+    if (inet_pton(AF_INET, host, &amp;addr.sin_addr) &lt;= 0) {
+        fprintf(stderr, &quot;Invalid host\n&quot;);
+        return 1;
+    }
+#endif
+
+    printf(&quot;Connecting to %s:%d ...\n&quot;, host, port);
+    if (connect(sock, (struct sockaddr *)&amp;addr, sizeof(addr)) == SOCKET_ERROR) {
+        fprintf(stderr, &quot;Connect failed\n&quot;);
+        report_flask(token, &quot;failed&quot;, &quot;connect failed&quot;);
+        return 1;
+    }
+
+    snprintf(req, sizeof(req), &quot;%s|%s&quot;, token, action_str);
+    send_line(sock, req);
+    printf(&quot;Sent: %s\n&quot;, req);
+
+    while (recv_line(sock, line, sizeof(line)) &gt; 0) {
+        printf(&quot;&lt; %s\n&quot;, line);
+        if (strncmp(line, &quot;ERR|&quot;, 4) == 0) {
+            report_flask(token, &quot;failed&quot;, line + 4);
+            CLOSE_SOCKET(sock);
+            return 1;
+        }
+        if (strncmp(line, &quot;FILE|&quot;, 5) == 0) {
+            if (recv_file(sock, g_cfg.client_install_dir, line) != 0) {
+                report_flask(token, &quot;failed&quot;, &quot;file receive error&quot;);
+                CLOSE_SOCKET(sock);
+                return 1;
+            }
+            continue;
+        }
+        if (strncmp(line, &quot;NTP|&quot;, 4) == 0) {
+            char server[MAX_PATH_LEN], detail[MAX_LINE];
+            if (sscanf(line, &quot;NTP|%259[^|]|%511[^\n]&quot;, server, detail) &gt;= 1) {
+                char msg[MAX_LINE];
+                printf(&quot;Applying NTP peer: %s\n&quot;, server);
+                if (g_cfg.ntp_sync_clients) {
+                    if (ntp_sync_system(server, msg, sizeof(msg)) == 0)
+                        printf(&quot;Client NTP sync OK: %s\n&quot;, msg);
+                    else
+                        printf(&quot;Client NTP sync failed: %s\n&quot;, msg);
+                }
+            }
+            continue;
+        }
+        if (strcmp(line, &quot;OK|update complete&quot;) == 0 ||
+            strcmp(line, &quot;OK|migration complete&quot;) == 0 ||
+            strcmp(line, &quot;OK|ntp complete&quot;) == 0) {
+            report_flask(token, &quot;success&quot;, line + 3);
+            break;
+        }
+        if (strncmp(line, &quot;OK|&quot;, 3) == 0)
+            continue;
+    }
+
+    CLOSE_SOCKET(sock);
+#ifdef _WIN32
+    WSACleanup();
+#endif
+    printf(&quot;Done.\n&quot;);
+    return 0;
+}
+</code></pre></div>
+</div></div></div></div></div><div class="section-block lab"><div class="d-flex align-items-center gap-2 mb-3"><span class="badge badge-lab"><i class="bi bi-tools"></i> 실습</span><h4 class="h5 mb-0">★ 실습 6-B: 종합 과제 (20분)</h4></div><div class="content-card section-body">
+<p>Ubuntu 서버 + 클라이언트 2대(Ubuntu/Windows 혼합 가능)로 수행 후 보고서 제출.</p>
+<ol>
+  <li>Flask: lab-a, lab-b 등록 (호스트=Ubuntu 서버 IP)</li>
+  <li>토큰 발급 → <code>tokens.conf</code> 등록</li>
+  <li><code>packages/config.ini</code> → version=1.0.3</li>
+  <li>서버 기동 후 각 클라이언트에서 update · NTP 1회</li>
+  <li>통계·현황 캡처, 오류 1건+해결 기술</li>
+</ol>
+<p class="text-muted small">관련 설정·클라이언트 <strong>전체 소스</strong>는 <strong>소스 보기</strong>를 참고하세요.</p>
+<div class="source-panel mt-3">
+<button class="btn btn-source-toggle w-100 d-flex justify-content-between align-items-center" type="button" data-bs-toggle="collapse" data-bs-target="#source-6-4" aria-expanded="false">
+<span><i class="bi bi-code-slash me-2"></i>소스 보기 (전체 4개 파일)</span>
+<span class="source-chevron"><i class="bi bi-chevron-down"></i></span></button>
+<div class="collapse source-collapse" id="source-6-4"><div class="source-inner">
+<div class="source-file-block mb-4">
+<div class="d-flex flex-wrap justify-content-between align-items-center gap-2 mb-2"><span class="source-file-title"><i class="bi bi-file-earmark-code"></i> 종합 실습용 설정 <small class="text-secondary">(config/deploy_targets.conf)</small></span><span><span class="badge bg-success">Ubuntu / Linux</span> <span class="badge bg-dark">ini</span> <span class="badge bg-outline-light text-light border">37 lines</span></span></div>
+<div class="flow-diagrams mb-3"><div class="flow-block mb-2"><button class="btn btn-sm btn-flow-toggle w-100 text-start d-flex justify-content-between" type="button" data-bs-toggle="collapse" data-bs-target="#flow-c-6-4-1"><span><i class="bi bi-diagram-3"></i> 설정 파일 읽기 흐름</span><i class="bi bi-chevron-down"></i></button><div class="collapse show" id="flow-c-6-4-1"><div class="mermaid flow-mermaid">flowchart TD
+  A[deploy_targets.conf] --> B[load_deploy_config]
+  B --> C[g_cfg 구조체 채움]
+  C --> D[server_port·worker_threads 등]
+  C --> E[update_file 목록]
+  C --> F[ntp_server 등]</div></div></div></div>
+<div class="symbol-guide mb-2"><button class="btn btn-sm btn-outline-light w-100 text-start d-flex justify-content-between" type="button" data-bs-toggle="collapse" data-bs-target="#sym-6-4-1"><span><i class="bi bi-journal-text"></i> 변수·함수 설명 (8개)</span><i class="bi bi-chevron-down"></i></button><div class="collapse show symbol-collapse" id="sym-6-4-1"><table class="table table-sm table-symbol mb-0"><thead><tr><th>이름</th><th>구분</th><th>설명</th></tr></thead><tbody>
+<tr><td><code>server_port</code></td><td><span class="badge sym-kind">설정</span></td><td>C 배포 서버 TCP 리스닝 포트. Ubuntu 방화벽(ufw)에서 허용 필요.</td></tr>
+<tr><td><code>package_dir</code></td><td><span class="badge sym-kind">설정</span></td><td>배포 패키지 디렉터리. 서버 프로세스 기준 상대 경로.</td></tr>
+<tr><td><code>update_file_N</code></td><td><span class="badge sym-kind">설정</span></td><td>업데이트 시 전송할 파일 목록(N=1,2,…).</td></tr>
+<tr><td><code>worker_threads</code></td><td><span class="badge sym-kind">설정</span></td><td>스레드 풀 워커 수. 1000대 접속 시 CPU 코어×1~2 권장.</td></tr>
+<tr><td><code>listen_backlog</code></td><td><span class="badge sym-kind">설정</span></td><td>listen() 백로그. 동시 SYN 대기 큐 크기.</td></tr>
+<tr><td><code>max_concurrent</code></td><td><span class="badge sym-kind">설정</span></td><td>동시 처리 연결 상한. 초과 시 ERR|server busy.</td></tr>
+<tr><td><code>package_cache_enabled</code></td><td><span class="badge sym-kind">설정</span></td><td>1이면 기동 시 패키지를 RAM에 선로딩.</td></tr>
+<tr><td><code>ntp_server</code></td><td><span class="badge sym-kind">설정</span></td><td>NTP 서버(쉼표 구분). Ubuntu: systemd-timesyncd/chrony와 연동.</td></tr>
+</tbody></table></div></div>
+<p class="source-hint small text-secondary mb-1"><i class="bi bi-folder2-open"></i> 프로젝트에서 불러온 원본 소스입니다.</p><pre class="source-raw" data-source-file="config/deploy_targets.conf"><code># ============================================================
+# deploy_targets.conf — 배포 서버·클라이언트 공통 설정
+# Ubuntu 배포 서버에 두고, 경로는 서버 실행 위치 기준 상대 경로
+# ============================================================
+
+# 배포 서버가 listen 할 TCP 포트 (방화벽: ufw allow 9900/tcp)
+server_port=9900
+
+# 배포할 파일이 들어 있는 폴더 (packages/app.bin 등)
+package_dir=../packages
+
+# 업데이트(update) 시 클라이언트로 보낼 파일 목록
+update_file_1=app.bin
+update_file_2=config.ini
+
+# 마이그레이션(migration) 시 보낼 파일 목록
+migration_file_1=migrate_v2.sql
+migration_file_2=schema_patch.json
+
+# 클라이언트 PC에서 파일을 받을 폴더 (Ubuntu/Windows 각각 실행 위치 기준)
+client_install_dir=./installed
+
+# 배포 완료 후 결과를 보고할 Flask URL (서버 IP로 바꿀 수 있음)
+flask_report_url=http://127.0.0.1:5000/api/report
+
+# --- 1000대 이상 동시 접속용 (Ubuntu 서버 CPU·메모리에 맞게 조정) ---
+worker_threads=64          # 일하는 스레드 수
+listen_backlog=2048        # accept 대기 줄 길이
+max_queue_size=2048        # 작업 큐 크기
+max_concurrent=1200        # 동시 연결 상한 (넘으면 server busy)
+package_cache_enabled=1    # 1=패키지를 RAM에 미리 로드
+
+# --- NTP 시각 동기화 ---
+ntp_server=time.windows.com,pool.ntp.org
+ntp_sync_on_startup=1      # 서버 켤 때 한 번 동기화
+ntp_sync_interval_min=30   # 이 분마다 다시 동기화
+ntp_sync_clients=1         # 1=클라이언트도 NTP 맞춤 시도
+</code></pre></div>
+<div class="source-file-block mb-4">
+<div class="d-flex flex-wrap justify-content-between align-items-center gap-2 mb-2"><span class="source-file-title"><i class="bi bi-file-earmark-code"></i> 종합 실습용 토큰 <small class="text-secondary">(config/tokens.conf)</small></span><span><span class="badge bg-secondary">공통</span> <span class="badge bg-dark">ini</span> <span class="badge bg-outline-light text-light border">14 lines</span></span></div>
+<div class="flow-diagrams mb-3"><div class="flow-block mb-2"><button class="btn btn-sm btn-flow-toggle w-100 text-start d-flex justify-content-between" type="button" data-bs-toggle="collapse" data-bs-target="#flow-c-6-4-2"><span><i class="bi bi-diagram-3"></i> 토큰 파일 사용 흐름</span><i class="bi bi-chevron-down"></i></button><div class="collapse show" id="flow-c-6-4-2"><div class="mermaid flow-mermaid">flowchart TD
+  A[Flask에서 토큰 발급] --> B[tokens.conf에 한줄 추가]
+  B --> C[load_tokens at 서버기동]
+  C --> D[g_tokens 배열]
+  D --> E[validate_token 검사]
+  E -->|OK| F[배포 허용]
+  E -->|FAIL| G[ERR 응답]</div></div></div></div>
+<div class="symbol-guide mb-2"><button class="btn btn-sm btn-outline-light w-100 text-start d-flex justify-content-between" type="button" data-bs-toggle="collapse" data-bs-target="#sym-6-4-2"><span><i class="bi bi-journal-text"></i> 변수·함수 설명 (1개)</span><i class="bi bi-chevron-down"></i></button><div class="collapse show symbol-collapse" id="sym-6-4-2"><table class="table table-sm table-symbol mb-0"><thead><tr><th>이름</th><th>구분</th><th>설명</th></tr></thead><tbody>
+<tr><td><code>Flask 발급 토큰</code></td><td><span class="badge sym-kind">운영</span></td><td>GUI에서 발급 후 이 파일에 동기화해야 C 서버가 인식.</td></tr>
+</tbody></table></div></div>
+<p class="source-hint small text-secondary mb-1"><i class="bi bi-folder2-open"></i> 프로젝트에서 불러온 원본 소스입니다.</p><pre class="source-raw" data-source-file="config/tokens.conf"><code># ============================================================
+# tokens.conf — C 배포 서버가 인정하는 토큰 목록
+# Flask GUI에서 발급한 토큰을 여기에 한 줄씩 추가해야 서버가 허용합니다.
+# 형식:  토큰문자열=작업종류|최대사용횟수
+# 작업종류: update, migration, ntp
+# ============================================================
+
+# --- 실습·데모용 (교재 예제) ---
+UPD-DEMO-UPDATE-001=update|1000
+MIG-DEMO-MIGRATION-001=migration|1000
+NTP-DEMO-SYNC-001=ntp|1000
+
+# --- Flask에서 발급한 토큰 예시 (아래처럼 추가) ---
+# UPD-1-1.0.0-A1B2C3D4=update|5
+</code></pre></div>
+<div class="source-file-block mb-4">
+<div class="d-flex flex-wrap justify-content-between align-items-center gap-2 mb-2"><span class="source-file-title"><i class="bi bi-file-earmark-code"></i> Ubuntu 빌드 <small class="text-secondary">(Makefile)</small></span><span><span class="badge bg-success">Ubuntu / Linux</span> <span class="badge bg-dark">text</span> <span class="badge bg-outline-light text-light border">37 lines</span></span></div>
+<div class="flow-diagrams mb-3"><div class="flow-block mb-2"><button class="btn btn-sm btn-flow-toggle w-100 text-start d-flex justify-content-between" type="button" data-bs-toggle="collapse" data-bs-target="#flow-c-6-4-3"><span><i class="bi bi-diagram-3"></i> 빌드 절차 플로우차트</span><i class="bi bi-chevron-down"></i></button><div class="collapse show" id="flow-c-6-4-3"><div class="mermaid flow-mermaid">flowchart TD
+  A[make 입력] --> B[packages 폴더·데모 파일 생성]
+  B --> C[deploy_common 소스 컴파일]
+  C --> D[deploy_server/server.c 링크]
+  C --> E[deploy_client/client.c 링크]
+  D --> F[deploy_server/deploy_server 생성]
+  E --> G[deploy_client/deploy_client 생성]</div></div></div><div class="flow-block mb-2"><button class="btn btn-sm btn-flow-toggle w-100 text-start d-flex justify-content-between" type="button" data-bs-toggle="collapse" data-bs-target="#flow-s-6-4-3"><span><i class="bi bi-arrow-left-right"></i> 빌드 산출물 관계</span><i class="bi bi-chevron-down"></i></button><div class="collapse show" id="flow-s-6-4-3"><div class="mermaid flow-mermaid">flowchart LR
+  SRC[소스 .c 파일] --> SRV[deploy_server]
+  SRC --> CLI[deploy_client]
+  PKG[packages/] -.-> SRV</div></div></div></div>
+<div class="symbol-guide mb-2"><button class="btn btn-sm btn-outline-light w-100 text-start d-flex justify-content-between" type="button" data-bs-toggle="collapse" data-bs-target="#sym-6-4-3"><span><i class="bi bi-journal-text"></i> 변수·함수 설명 (1개)</span><i class="bi bi-chevron-down"></i></button><div class="collapse show symbol-collapse" id="sym-6-4-3"><table class="table table-sm table-symbol mb-0"><thead><tr><th>이름</th><th>구분</th><th>설명</th></tr></thead><tbody>
+<tr><td><code>make</code></td><td><span class="badge sym-kind">명령</span></td><td>서버·클라이언트 한 번에 빌드.</td></tr>
+</tbody></table></div></div>
+<p class="source-hint small text-secondary mb-1"><i class="bi bi-folder2-open"></i> 프로젝트에서 불러온 원본 소스입니다.</p><pre class="source-raw" data-source-file="Makefile"><code># ============================================================
+# Makefile — Ubuntu/Linux 에서 배포 서버·클라이언트 빌드
+# 사용: make          (빌드)
+#       make clean    (생성 파일 삭제)
+# Windows 클라이언트만 build.bat 사용
+# ============================================================
+
+CC ?= gcc
+CFLAGS = -Wall -Wextra -O2 -Ideploy_common -pthread
+# 여러 .c 파일을 링크할 때 공통으로 쓰는 소스
+COMMON = deploy_common/config.c deploy_common/thread_pool.c \
+         deploy_common/package_cache.c deploy_common/ntp_sync.c
+LDFLAGS = -pthread
+
+all: dirs deploy_server/deploy_server deploy_client/deploy_client packages
+
+dirs:
+	@mkdir -p packages deploy_client/installed 2&gt;/dev/null || true
+
+# 배포 서버 실행 파일
+deploy_server/deploy_server: deploy_server/server.c $(COMMON)
+	$(CC) $(CFLAGS) -o $@ deploy_server/server.c $(COMMON) $(LDFLAGS)
+
+# 배포 클라이언트 실행 파일 (Ubuntu PC 또는 Windows용 WSL에서 빌드)
+deploy_client/deploy_client: deploy_client/client.c $(COMMON)
+	$(CC) $(CFLAGS) -o $@ deploy_client/client.c $(COMMON) $(LDFLAGS)
+
+# 데모용 패키지 파일 생성
+packages:
+	@echo demo &gt; packages/app.bin
+	@echo &#x27;[config]&#x27; &gt; packages/config.ini
+	@echo &#x27;version=1.0.1&#x27; &gt;&gt; packages/config.ini
+	@echo &#x27;-- migrate&#x27; &gt; packages/migrate_v2.sql
+	@echo &#x27;{&quot;patch&quot;:2}&#x27; &gt; packages/schema_patch.json
+
+clean:
+	rm -f deploy_server/deploy_server deploy_client/deploy_client
+</code></pre></div>
+<div class="source-file-block mb-4">
+<div class="d-flex flex-wrap justify-content-between align-items-center gap-2 mb-2"><span class="source-file-title"><i class="bi bi-file-earmark-code"></i> 클라이언트 전체 (Windows·Ubuntu 공통 소스) <small class="text-secondary">(deploy_client/client.c)</small></span><span><span class="badge bg-secondary">공통</span> <span class="badge bg-dark">c</span> <span class="badge bg-outline-light text-light border">261 lines</span></span></div>
+<div class="flow-diagrams mb-3"><div class="flow-block mb-2"><button class="btn btn-sm btn-flow-toggle w-100 text-start d-flex justify-content-between" type="button" data-bs-toggle="collapse" data-bs-target="#flow-c-6-4-4"><span><i class="bi bi-diagram-3"></i> 배포 클라이언트 main 플로우차트</span><i class="bi bi-chevron-down"></i></button><div class="collapse show" id="flow-c-6-4-4"><div class="mermaid flow-mermaid">flowchart TD
+  START[main argv] --> A[load_deploy_config]
+  A --> B[TCP connect 서버]
+  B -->|실패| X[report_flask failed]
+  B -->|성공| C["send TOKEN action"]
+  C --> D{응답 줄 읽기}
+  D -->|FILE| E[recv_file 저장]
+  D -->|ERR| X
+  D -->|OK complete| F[report_flask success]
+  E --> D</div></div></div><div class="flow-block mb-2"><button class="btn btn-sm btn-flow-toggle w-100 text-start d-flex justify-content-between" type="button" data-bs-toggle="collapse" data-bs-target="#flow-s-6-4-4"><span><i class="bi bi-arrow-left-right"></i> 클라이언트·서버 상호작용 흐름도</span><i class="bi bi-chevron-down"></i></button><div class="collapse show" id="flow-s-6-4-4"><div class="mermaid flow-mermaid">sequenceDiagram
+  participant PC as 클라이언트 PC
+  participant CL as client.c
+  participant SV as Ubuntu서버
+  PC->>CL: deploy_client 실행
+  CL->>SV: connect port 9900
+  CL->>SV: UPD token update
+  SV-->>CL: OK update started
+  SV-->>CL: FILE app.bin size
+  CL->>CL: installed 저장
+  SV-->>CL: OK update complete
+  CL->>PC: Flask api report 선택</div></div></div></div>
+<div class="symbol-guide mb-2"><button class="btn btn-sm btn-outline-light w-100 text-start d-flex justify-content-between" type="button" data-bs-toggle="collapse" data-bs-target="#sym-6-4-4"><span><i class="bi bi-journal-text"></i> 변수·함수 설명 (1개)</span><i class="bi bi-chevron-down"></i></button><div class="collapse show symbol-collapse" id="sym-6-4-4"><table class="table table-sm table-symbol mb-0"><thead><tr><th>이름</th><th>구분</th><th>설명</th></tr></thead><tbody>
+<tr><td><code>main()</code></td><td><span class="badge sym-kind">함수</span></td><td>종합 과제: update 2회 + ntp 1회 실행 진입점.</td></tr>
+</tbody></table></div></div>
+<p class="source-hint small text-secondary mb-1"><i class="bi bi-folder2-open"></i> 프로젝트에서 불러온 원본 소스입니다.</p><pre class="source-raw" data-source-file="deploy_client/client.c"><code>/*
+ * client.c — 배포 클라이언트 (Ubuntu / Windows 공통 소스)
+ *
+ * 하는 일:
+ *   1) Ubuntu 배포 서버에 TCP로 접속
+ *   2) &quot;토큰|update&quot; 형식으로 요청 전송
+ *   3) 서버가 보내는 파일을 받아 installed/ 폴더에 저장
+ *   4) (선택) Flask 웹에 결과 보고
+ *
+ * 실행 예:
+ *   ./deploy_client 192.168.0.10 UPD-xxx-001 update ../config/deploy_targets.conf
+ *   deploy_client.exe 192.168.0.10 UPD-xxx-001 update ..\\config\\deploy_targets.conf
+ */
+#include &quot;../deploy_common/config.h&quot;
+#include &quot;../deploy_common/ntp_sync.h&quot;
+#include &lt;stdio.h&gt;
+#include &lt;string.h&gt;
+#include &lt;stdlib.h&gt;
+#include &lt;sys/stat.h&gt;
+
+#ifdef _WIN32
+  #include &lt;direct.h&gt;
+  #include &lt;winsock2.h&gt;
+  #include &lt;ws2tcpip.h&gt;
+  #pragma comment(lib, &quot;ws2_32.lib&quot;)
+  #define CLOSE_SOCKET closesocket
+  #define MKDIR(p) _mkdir(p)
+#else
+  #include &lt;unistd.h&gt;
+  #include &lt;sys/socket.h&gt;
+  #include &lt;netinet/in.h&gt;
+  #include &lt;arpa/inet.h&gt;
+  #define SOCKET int
+  #define INVALID_SOCKET (-1)
+  #define SOCKET_ERROR (-1)
+  #define CLOSE_SOCKET close
+  #define MKDIR(p) mkdir(p, 0755)
+#endif
+
+static deploy_config_t g_cfg;  /* deploy_targets.conf 에서 읽은 설정 */
+
+/* 프로토콜: 한 줄 텍스트 보내기 (끝에 \n 붙임) */
+static int send_line(SOCKET sock, const char *msg) {
+    char buf[MAX_LINE];
+    snprintf(buf, sizeof(buf), &quot;%s\n&quot;, msg);
+    return send(sock, buf, (int)strlen(buf), 0) &gt; 0 ? 0 : -1;
+}
+
+static int recv_line(SOCKET sock, char *buf, int size) {
+    int n = 0;
+    char c;
+    while (n &lt; size - 1) {
+        if (recv(sock, &amp;c, 1, 0) &lt;= 0) return -1;
+        if (c == &#x27;\n&#x27;) break;
+        if (c != &#x27;\r&#x27;) buf[n++] = c;
+    }
+    buf[n] = &#x27;\0&#x27;;
+    return n;
+}
+
+static void ensure_dir(const char *path) {
+    char tmp[MAX_PATH_LEN];
+    char *p;
+    strncpy(tmp, path, MAX_PATH_LEN - 1);
+    for (p = tmp + 1; *p; p++) {
+        if (*p == &#x27;/&#x27; || *p == &#x27;\\&#x27;) {
+            *p = &#x27;\0&#x27;;
+            MKDIR(tmp);
+            *p = &#x27;/&#x27;;
+        }
+    }
+    MKDIR(tmp);
+}
+
+/* TCP는 한 번에 원하는 만큼 안 올 수 있어서, 정확히 need 바이트만큼 받을 때까지 반복 */
+static int recv_exact(SOCKET sock, char *buf, int need) {
+    int got = 0, n;
+    while (got &lt; need) {
+        n = recv(sock, buf + got, need - got, 0);
+        if (n &lt;= 0) return -1;
+        got += n;
+    }
+    return got;
+}
+
+/*
+ * 서버가 보낸 FILE|이름|크기 메시지 다음의 바이너리를 파일로 저장
+ */
+static int recv_file(SOCKET sock, const char *install_dir, const char *line) {
+    char filename[MAX_PATH_LEN];
+    long expected = 0, received = 0;
+    char outpath[MAX_PATH_LEN];
+    FILE *f;
+    char buf[4096];
+    int n, chunk;
+    char endline[MAX_LINE];
+
+    if (sscanf(line, &quot;FILE|%259[^|]|%ld&quot;, filename, &amp;expected) &lt; 2)
+        return -1;
+
+    snprintf(outpath, sizeof(outpath), &quot;%s/%s&quot;, install_dir, filename);
+    ensure_dir(install_dir);
+    f = fopen(outpath, &quot;wb&quot;);
+    if (!f) {
+        fprintf(stderr, &quot;Cannot write %s\n&quot;, outpath);
+        return -1;
+    }
+    printf(&quot;Receiving -&gt; %s (%ld bytes)\n&quot;, outpath, expected);
+
+    while (received &lt; expected) {
+        chunk = (int)((expected - received) &lt; (long)sizeof(buf) ? (expected - received) : (long)sizeof(buf));
+        n = recv_exact(sock, buf, chunk);
+        if (n &lt;= 0) {
+            fclose(f);
+            return -1;
+        }
+        fwrite(buf, 1, (size_t)n, f);
+        received += n;
+    }
+    fclose(f);
+
+    if (recv_line(sock, endline, sizeof(endline)) &lt; 0 || strcmp(endline, &quot;FILE_END&quot;) != 0) {
+        fprintf(stderr, &quot;Expected FILE_END, got: %s\n&quot;, endline);
+        return -1;
+    }
+    printf(&quot;Saved %s\n&quot;, outpath);
+    return 0;
+}
+
+static void report_flask(const char *token, const char *status, const char *message) {
+    char cmd[MAX_LINE * 2];
+    if (g_cfg.flask_report_url[0] == &#x27;\0&#x27;) return;
+#ifdef _WIN32
+    snprintf(cmd, sizeof(cmd),
+        &quot;powershell -Command \&quot;Invoke-RestMethod -Uri &#x27;%s&#x27; -Method POST &quot;
+        &quot;-ContentType &#x27;application/json&#x27; -Body &#x27;{\\\&quot;token\\\&quot;:\\\&quot;%s\\\&quot;,&quot;
+        &quot;\\\&quot;status\\\&quot;:\\\&quot;%s\\\&quot;,\\\&quot;message\\\&quot;:\\\&quot;%s\\\&quot;}&#x27;\&quot; 2&gt;nul&quot;,
+        g_cfg.flask_report_url, token, status, message);
+#else
+    snprintf(cmd, sizeof(cmd),
+        &quot;curl -s -X POST -H &#x27;Content-Type: application/json&#x27; &quot;
+        &quot;-d &#x27;{\&quot;token\&quot;:\&quot;%s\&quot;,\&quot;status\&quot;:\&quot;%s\&quot;,\&quot;message\&quot;:\&quot;%s\&quot;}&#x27; &#x27;%s&#x27; 2&gt;/dev/null&quot;,
+        token, status, message, g_cfg.flask_report_url);
+#endif
+    system(cmd);
+}
+
+/*
+ * main — 프로그램 시작점
+ * argv[1]=서버IP, argv[2]=토큰, argv[3]=update|migration|ntp
+ */
+int main(int argc, char *argv[]) {
+    const char *host = &quot;127.0.0.1&quot;;
+    const char *token;
+    const char *action_str;
+    const char *cfg_path = &quot;../config/deploy_targets.conf&quot;;
+    SOCKET sock;
+    struct sockaddr_in addr;
+    char req[MAX_LINE];
+    char line[MAX_LINE];
+    int port;
+
+#ifdef _WIN32
+    WSADATA wsa;
+#endif
+
+    if (argc &lt; 4) {
+        fprintf(stderr, &quot;Usage: %s &lt;host&gt; &lt;token&gt; &lt;update|migration|ntp&gt; [config]\n&quot;, argv[0]);
+        return 1;
+    }
+    host = argv[1];
+    token = argv[2];
+    action_str = argv[3];
+    if (argc &gt; 4) cfg_path = argv[4];
+
+    if (load_deploy_config(cfg_path, &amp;g_cfg) != 0) {
+        fprintf(stderr, &quot;Cannot load config\n&quot;);
+        return 1;
+    }
+    port = g_cfg.server_port;
+
+#ifdef _WIN32
+    WSAStartup(MAKEWORD(2, 2), &amp;wsa);
+#endif
+
+    sock = socket(AF_INET, SOCK_STREAM, 0);
+    if (sock == INVALID_SOCKET) return 1;
+
+    memset(&amp;addr, 0, sizeof(addr));
+    addr.sin_family = AF_INET;
+    addr.sin_port = htons((unsigned short)port);
+#ifdef _WIN32
+    addr.sin_addr.s_addr = inet_addr(host);
+    if (addr.sin_addr.s_addr == INADDR_NONE) {
+        fprintf(stderr, &quot;Invalid host\n&quot;);
+        return 1;
+    }
+#else
+    if (inet_pton(AF_INET, host, &amp;addr.sin_addr) &lt;= 0) {
+        fprintf(stderr, &quot;Invalid host\n&quot;);
+        return 1;
+    }
+#endif
+
+    printf(&quot;Connecting to %s:%d ...\n&quot;, host, port);
+    if (connect(sock, (struct sockaddr *)&amp;addr, sizeof(addr)) == SOCKET_ERROR) {
+        fprintf(stderr, &quot;Connect failed\n&quot;);
+        report_flask(token, &quot;failed&quot;, &quot;connect failed&quot;);
+        return 1;
+    }
+
+    snprintf(req, sizeof(req), &quot;%s|%s&quot;, token, action_str);
+    send_line(sock, req);
+    printf(&quot;Sent: %s\n&quot;, req);
+
+    while (recv_line(sock, line, sizeof(line)) &gt; 0) {
+        printf(&quot;&lt; %s\n&quot;, line);
+        if (strncmp(line, &quot;ERR|&quot;, 4) == 0) {
+            report_flask(token, &quot;failed&quot;, line + 4);
+            CLOSE_SOCKET(sock);
+            return 1;
+        }
+        if (strncmp(line, &quot;FILE|&quot;, 5) == 0) {
+            if (recv_file(sock, g_cfg.client_install_dir, line) != 0) {
+                report_flask(token, &quot;failed&quot;, &quot;file receive error&quot;);
+                CLOSE_SOCKET(sock);
+                return 1;
+            }
+            continue;
+        }
+        if (strncmp(line, &quot;NTP|&quot;, 4) == 0) {
+            char server[MAX_PATH_LEN], detail[MAX_LINE];
+            if (sscanf(line, &quot;NTP|%259[^|]|%511[^\n]&quot;, server, detail) &gt;= 1) {
+                char msg[MAX_LINE];
+                printf(&quot;Applying NTP peer: %s\n&quot;, server);
+                if (g_cfg.ntp_sync_clients) {
+                    if (ntp_sync_system(server, msg, sizeof(msg)) == 0)
+                        printf(&quot;Client NTP sync OK: %s\n&quot;, msg);
+                    else
+                        printf(&quot;Client NTP sync failed: %s\n&quot;, msg);
+                }
+            }
+            continue;
+        }
+        if (strcmp(line, &quot;OK|update complete&quot;) == 0 ||
+            strcmp(line, &quot;OK|migration complete&quot;) == 0 ||
+            strcmp(line, &quot;OK|ntp complete&quot;) == 0) {
+            report_flask(token, &quot;success&quot;, line + 3);
+            break;
+        }
+        if (strncmp(line, &quot;OK|&quot;, 3) == 0)
+            continue;
+    }
+
+    CLOSE_SOCKET(sock);
+#ifdef _WIN32
+    WSACleanup();
+#endif
+    printf(&quot;Done.\n&quot;);
+    return 0;
+}
+</code></pre></div>
+</div></div></div></div></div><div class="section-block theory"><div class="d-flex align-items-center gap-2 mb-3"><span class="badge badge-theory"><i class="bi bi-book"></i> 이론</span><h4 class="h5 mb-0">6-3. 트러블슈팅 &amp; Q&amp;A (5분)</h4></div><div class="content-card section-body">
+<table class="table table-sm">
+  <tr><th>증상</th><th>원인</th><th>해결</th></tr>
+  <tr><td>Connect failed</td><td>서버 미기동·방화벽</td><td>9900 포트, 서버 실행 확인</td></tr>
+  <tr><td>invalid token</td><td>tokens.conf 누락</td><td>토큰 한 줄 추가</td></tr>
+  <tr><td>server busy</td><td>동시 접속 초과</td><td>잠시 후 재시도, max_concurrent↑</td></tr>
+  <tr><td>w32tm failed</td><td>Windows 권한</td><td>관리자 CMD</td></tr>
+  <tr><td>ntp sync failed (linux)</td><td>chrony 미설치</td><td>sudo apt install chrony</td></tr>
+  <tr><td>pending 유지</td><td>report 미호출</td><td>클라이언트 완료·api/report 확인</td></tr>
+</table>
+</div></div>
+    </main>
+  </div>
+</div>
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
+<script src="assets/course.js"></script>
+<script src="assets/mermaid-init.js"></script>
+<script src="assets/mermaid-render.js"></script>
+</body>
+</html>

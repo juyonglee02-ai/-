@@ -1,0 +1,519 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>5교시 — 대규모 동시 접속 — 1000대 설계 — 통합 배포관리 수업자료</title>
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css" rel="stylesheet">
+  <link href="assets/course.css" rel="stylesheet">
+  <script src="https://cdn.jsdelivr.net/npm/mermaid@10.9.0/dist/mermaid.min.js"></script>
+</head>
+<body>
+<div class="container-fluid">
+  <div class="row">
+    <nav class="col-lg-2 course-nav py-3 d-none d-lg-block">
+      <h5 class="text-white px-3 mb-1"><i class="bi bi-mortarboard"></i> 수업자료</h5>
+      <p class="text-white-50 px-3 small mb-3">오프라인 · 6시간</p>
+      <a href="index.html" class=""><i class="bi bi-house"></i> 강의 홈</a>
+<a href="schedule.html" class=""><i class="bi bi-calendar3"></i> 시간표</a>
+<hr class="border-secondary mx-3">
+<a href="module-01.html" class=""><span class="module-num">1교시</span><br>배포관리 개요와 프로젝트 구조</a>
+<a href="module-02.html" class=""><span class="module-num">2교시</span><br>Flask 통합 배포관리 GUI</a>
+<a href="module-03.html" class=""><span class="module-num">3교시</span><br>토큰 기반 인증과 설정 파일</a>
+<a href="module-04.html" class=""><span class="module-num">4교시</span><br>C 배포 서버·클라이언트와 프로토콜</a>
+<a href="module-05.html" class="active"><span class="module-num">5교시</span><br>대규모 동시 접속 — 1000대 설계</a>
+<a href="module-06.html" class=""><span class="module-num">6교시</span><br>NTP 동기화와 종합 실습·평가</a>
+      <hr class="border-secondary mx-3">
+      <p class="text-white-50 px-3 small">프로젝트 실행 없이 브라우저로 열기</p>
+    </nav>
+    <main class="col-lg-10 py-4 px-4">
+      <div class="d-lg-none mb-3">
+        <select class="form-select" onchange="if(this.value)location.href=this.value">
+          <option value="index.html">강의 홈</option>
+          <option value="schedule.html">시간표</option>
+          <option value="module-01.html">1교시</option><option value="module-02.html">2교시</option><option value="module-03.html">3교시</option><option value="module-04.html">4교시</option><option value="module-05.html">5교시</option><option value="module-06.html">6교시</option>
+        </select>
+      </div>
+      
+<div class="sticky-top-bar">
+  <div class="d-flex justify-content-between flex-wrap gap-2"><a href="module-04.html" class="btn btn-sm btn-outline-secondary">← 이전</a><a href="module-06.html" class="btn btn-sm btn-primary">다음 →</a></div>
+  <div class="progress progress-module mt-2"><div class="progress-bar" style="width:83%"></div></div>
+</div>
+<div class="content-card">
+  <span class="badge bg-primary mb-2">60분</span>
+  <h1 class="h3">5교시. 대규모 동시 접속 — 1000대 설계</h1>
+  <h6 class="text-muted mt-3">학습 목표</h6><ul><li>단일 스레드 서버의 병목을 설명할 수 있다</li><li>스레드 풀·백로그·패키지 캐시의 역할을 설명할 수 있다</li><li>부하 테스트 스크립트로 동시 접속을 실험할 수 있다</li></ul>
+</div>
+<div class="section-block theory"><div class="d-flex align-items-center gap-2 mb-3"><span class="badge badge-theory"><i class="bi bi-book"></i> 이론</span><h4 class="h5 mb-0">5-1. 병목 분석 (15분)</h4></div><div class="content-card section-body">
+<ul>
+  <li><strong>순차 accept</strong>: 한 클라이언트 배포가 끝날 때까지 다음 accept 지연</li>
+  <li><strong>디스크 I/O</strong>: 1000번 동일 파일 읽기</li>
+  <li><strong>토큰 경쟁</strong>: 동시 갱신 시 데이터 레이스</li>
+</ul>
+<p>해결: <strong>스레드 풀</strong> + <strong>RAM 캐시</strong> + <strong>연결 상한</strong> + <strong>토큰 뮤텍스</strong></p>
+</div></div><div class="section-block theory"><div class="d-flex align-items-center gap-2 mb-3"><span class="badge badge-theory"><i class="bi bi-book"></i> 이론</span><h4 class="h5 mb-0">5-2. 구성 요소 (15분)</h4></div><div class="content-card section-body">
+<table class="table table-sm">
+  <tr><th>모듈</th><th>파일</th><th>역할</th></tr>
+  <tr><td>스레드 풀</td><td>thread_pool.c</td><td>accept 후 작업 큐에 넣고 워커가 처리</td></tr>
+  <tr><td>패키지 캐시</td><td>package_cache.c</td><td>기동 시 packages/* 메모리 로드</td></tr>
+  <tr><td>동시 제한</td><td>server.c</td><td>max_concurrent, queue full 응답</td></tr>
+</table>
+<div class="mermaid">
+sequenceDiagram
+  participant C as 클라이언트들
+  participant L as Listen
+  participant Q as 작업큐
+  participant W as 워커스레드
+  participant M as RAM캐시
+  C->>L: TCP connect
+  L->>Q: job enqueue
+  Q->>W: dequeue
+  W->>M: send_cached
+  W->>C: FILE + bytes
+</div>
+</div></div><div class="section-block lab"><div class="d-flex align-items-center gap-2 mb-3"><span class="badge badge-lab"><i class="bi bi-tools"></i> 실습</span><h4 class="h5 mb-0">★ 실습 5: 부하 테스트 (20분)</h4></div><div class="content-card section-body">
+<ol>
+  <li>Ubuntu <strong>배포 서버</strong> 실행</li>
+  <li><strong>Linux 클라이언트</strong>: <code>chmod +x scripts/load_test.sh && ./scripts/load_test.sh 서버IP UPD-DEMO-UPDATE-001 30 15</code></li>
+  <li><strong>Windows 클라이언트</strong>: <code>.\load_test.ps1 -TargetHost 서버IP -Count 30</code></li>
+  <li>서버 콘솔에서 동시 접속·<code>server busy</code> 메시지 관찰</li>
+</ol>
+<div class="alert alert-warning"><strong>주의</strong> 1000 연결 테스트 전 RAM·CPU 확인. 실습실은 30~100부터.</div>
+<p class="text-muted small">스레드풀·캐시·부하 스크립트 <strong>전체 소스</strong>는 <strong>소스 보기</strong>를 펼치세요.</p>
+<div class="source-panel mt-3">
+<button class="btn btn-source-toggle w-100 d-flex justify-content-between align-items-center" type="button" data-bs-toggle="collapse" data-bs-target="#source-5-3" aria-expanded="false">
+<span><i class="bi bi-code-slash me-2"></i>소스 보기 (전체 4개 파일)</span>
+<span class="source-chevron"><i class="bi bi-chevron-down"></i></span></button>
+<div class="collapse source-collapse" id="source-5-3"><div class="source-inner">
+<div class="source-file-block mb-4">
+<div class="d-flex flex-wrap justify-content-between align-items-center gap-2 mb-2"><span class="source-file-title"><i class="bi bi-file-earmark-code"></i> 스레드 풀 (전체) <small class="text-secondary">(deploy_common/thread_pool.c)</small></span><span><span class="badge bg-secondary">공통</span> <span class="badge bg-dark">c</span> <span class="badge bg-outline-light text-light border">202 lines</span></span></div>
+<div class="flow-diagrams mb-3"><div class="flow-block mb-2"><button class="btn btn-sm btn-flow-toggle w-100 text-start d-flex justify-content-between" type="button" data-bs-toggle="collapse" data-bs-target="#flow-c-5-3-1"><span><i class="bi bi-diagram-3"></i> 스레드 풀 동작 플로우차트</span><i class="bi bi-chevron-down"></i></button><div class="collapse show" id="flow-c-5-3-1"><div class="mermaid flow-mermaid">flowchart TD
+  A[thread_pool_submit] --> B{큐 여유?}
+  B -->|No| C[대기 또는 거부]
+  B -->|Yes| D[job 큐에 추가]
+  D --> E[워커 스레드 깨움]
+  E --> F[worker_loop]
+  F --> G[job.fn 실행]
+  G --> H[client_worker 등]</div></div></div><div class="flow-block mb-2"><button class="btn btn-sm btn-flow-toggle w-100 text-start d-flex justify-content-between" type="button" data-bs-toggle="collapse" data-bs-target="#flow-s-5-3-1"><span><i class="bi bi-arrow-left-right"></i> 서버 accept 와 풀 연동</span><i class="bi bi-chevron-down"></i></button><div class="collapse show" id="flow-s-5-3-1"><div class="mermaid flow-mermaid">sequenceDiagram
+  participant L as listen 루프
+  participant P as thread_pool
+  participant W as 워커
+  participant H as handle_client
+  L->>P: submit client_worker
+  P->>W: job 전달
+  W->>H: 소켓 처리
+  H-->>W: close socket</div></div></div></div>
+<div class="symbol-guide mb-2"><button class="btn btn-sm btn-outline-light w-100 text-start d-flex justify-content-between" type="button" data-bs-toggle="collapse" data-bs-target="#sym-5-3-1"><span><i class="bi bi-journal-text"></i> 변수·함수 설명 (6개)</span><i class="bi bi-chevron-down"></i></button><div class="collapse show symbol-collapse" id="sym-5-3-1"><table class="table table-sm table-symbol mb-0"><thead><tr><th>이름</th><th>구분</th><th>설명</th></tr></thead><tbody>
+<tr><td><code>thread_pool_t</code></td><td><span class="badge sym-kind">구조체</span></td><td>워커 스레드, 작업 큐, shutdown 플래그.</td></tr>
+<tr><td><code>thread_pool_create()</code></td><td><span class="badge sym-kind">함수</span></td><td>num_threads, queue_capacity로 풀 생성.</td></tr>
+<tr><td><code>thread_pool_submit()</code></td><td><span class="badge sym-kind">함수</span></td><td>작업 함수·인자를 큐에 넣음. 가득 차면 대기/실패.</td></tr>
+<tr><td><code>worker_loop()</code></td><td><span class="badge sym-kind">함수</span></td><td>큐에서 job 꺼내 fn(arg) 실행.</td></tr>
+<tr><td><code>sem_jobs / sem_slots</code></td><td><span class="badge sym-kind">변수(Win)</span></td><td>Windows 세마포어 기반 백프레셔.</td></tr>
+<tr><td><code>pthread_cond (Linux)</code></td><td><span class="badge sym-kind">동기화</span></td><td>Ubuntu에서 조건 변수로 큐 대기.</td></tr>
+</tbody></table></div></div>
+<p class="source-hint small text-secondary mb-1"><i class="bi bi-folder2-open"></i> 프로젝트에서 불러온 원본 소스입니다.</p><pre class="source-raw" data-source-file="deploy_common/thread_pool.c"><code>/*
+ * thread_pool.c — 작업 큐 + 워커 스레드
+ * 배포 서버가 클라이언트마다 스레드를 새로 만들지 않고,
+ * 미리 만든 스레드 풀에서 꺼내 쓰면 1000대 접속에도 버틸 수 있습니다.
+ */
+#include &quot;thread_pool.h&quot;
+#include &lt;stdlib.h&gt;
+#include &lt;string.h&gt;
+
+#ifdef _WIN32
+  #ifndef WIN32_LEAN_AND_MEAN
+  #define WIN32_LEAN_AND_MEAN
+  #endif
+  #include &lt;windows.h&gt;
+#else
+  #include &lt;pthread.h&gt;
+#endif
+
+typedef struct {
+    void (*fn)(void *);
+    void *arg;
+} job_t;
+
+struct thread_pool {
+#ifdef _WIN32
+    HANDLE *threads;
+    HANDLE sem_jobs;
+    HANDLE sem_slots;
+    CRITICAL_SECTION mutex;
+#else
+    pthread_t *threads;
+    pthread_mutex_t mutex;
+    pthread_cond_t cond_nonempty;
+    pthread_cond_t cond_nonfull;
+#endif
+    int num_threads;
+    job_t *queue;
+    int queue_capacity;
+    int head, tail, count;
+    int shutdown;
+};
+
+#ifdef _WIN32
+static DWORD WINAPI worker_loop_win(LPVOID arg) {
+    thread_pool_t *pool = (thread_pool_t *)arg;
+    job_t job;
+    for (;;) {
+        if (WaitForSingleObject(pool-&gt;sem_jobs, INFINITE) != WAIT_OBJECT_0)
+            break;
+        EnterCriticalSection(&amp;pool-&gt;mutex);
+        if (pool-&gt;shutdown &amp;&amp; pool-&gt;count == 0) {
+            LeaveCriticalSection(&amp;pool-&gt;mutex);
+            break;
+        }
+        job = pool-&gt;queue[pool-&gt;head];
+        pool-&gt;head = (pool-&gt;head + 1) % pool-&gt;queue_capacity;
+        pool-&gt;count--;
+        ReleaseSemaphore(pool-&gt;sem_slots, 1, NULL);
+        LeaveCriticalSection(&amp;pool-&gt;mutex);
+        if (job.fn) job.fn(job.arg);
+    }
+    return 0;
+}
+#else
+static void *worker_loop(void *arg) {
+    thread_pool_t *pool = (thread_pool_t *)arg;
+    job_t job;
+    for (;;) {
+        pthread_mutex_lock(&amp;pool-&gt;mutex);
+        while (pool-&gt;count == 0 &amp;&amp; !pool-&gt;shutdown)
+            pthread_cond_wait(&amp;pool-&gt;cond_nonempty, &amp;pool-&gt;mutex);
+        if (pool-&gt;shutdown &amp;&amp; pool-&gt;count == 0) {
+            pthread_mutex_unlock(&amp;pool-&gt;mutex);
+            break;
+        }
+        job = pool-&gt;queue[pool-&gt;head];
+        pool-&gt;head = (pool-&gt;head + 1) % pool-&gt;queue_capacity;
+        pool-&gt;count--;
+        pthread_cond_signal(&amp;pool-&gt;cond_nonfull);
+        pthread_mutex_unlock(&amp;pool-&gt;mutex);
+        if (job.fn) job.fn(job.arg);
+    }
+    return NULL;
+}
+#endif
+
+thread_pool_t *thread_pool_create(int num_threads, int queue_capacity) {
+    thread_pool_t *pool;
+    int i;
+    if (num_threads &lt; 1) num_threads = 1;
+    if (queue_capacity &lt; 16) queue_capacity = 16;
+
+    pool = (thread_pool_t *)calloc(1, sizeof(thread_pool_t));
+    if (!pool) return NULL;
+    pool-&gt;num_threads = num_threads;
+    pool-&gt;queue_capacity = queue_capacity;
+    pool-&gt;queue = (job_t *)calloc((size_t)queue_capacity, sizeof(job_t));
+#ifdef _WIN32
+    pool-&gt;threads = (HANDLE *)calloc((size_t)num_threads, sizeof(HANDLE));
+    pool-&gt;sem_jobs = CreateSemaphore(NULL, 0, (LONG)queue_capacity + num_threads, NULL);
+    pool-&gt;sem_slots = CreateSemaphore(NULL, (LONG)queue_capacity, (LONG)queue_capacity, NULL);
+#else
+    pool-&gt;threads = (pthread_t *)calloc((size_t)num_threads, sizeof(pthread_t));
+    pthread_mutex_init(&amp;pool-&gt;mutex, NULL);
+    pthread_cond_init(&amp;pool-&gt;cond_nonempty, NULL);
+    pthread_cond_init(&amp;pool-&gt;cond_nonfull, NULL);
+#endif
+    if (!pool-&gt;queue || !pool-&gt;threads
+#ifdef _WIN32
+        || !pool-&gt;sem_jobs || !pool-&gt;sem_slots
+#endif
+    ) {
+        thread_pool_destroy(pool);
+        return NULL;
+    }
+#ifdef _WIN32
+    InitializeCriticalSection(&amp;pool-&gt;mutex);
+    for (i = 0; i &lt; num_threads; i++)
+        pool-&gt;threads[i] = CreateThread(NULL, 0, worker_loop_win, pool, 0, NULL);
+#else
+    for (i = 0; i &lt; num_threads; i++)
+        pthread_create(&amp;pool-&gt;threads[i], NULL, worker_loop, pool);
+#endif
+    return pool;
+}
+
+int thread_pool_submit(thread_pool_t *pool, void (*task)(void *arg), void *arg) {
+    if (!pool || !task || pool-&gt;shutdown) return -1;
+#ifdef _WIN32
+    if (WaitForSingleObject(pool-&gt;sem_slots, INFINITE) != WAIT_OBJECT_0)
+        return -1;
+    EnterCriticalSection(&amp;pool-&gt;mutex);
+    pool-&gt;queue[pool-&gt;tail].fn = task;
+    pool-&gt;queue[pool-&gt;tail].arg = arg;
+    pool-&gt;tail = (pool-&gt;tail + 1) % pool-&gt;queue_capacity;
+    pool-&gt;count++;
+    LeaveCriticalSection(&amp;pool-&gt;mutex);
+    ReleaseSemaphore(pool-&gt;sem_jobs, 1, NULL);
+#else
+    pthread_mutex_lock(&amp;pool-&gt;mutex);
+    while (pool-&gt;count &gt;= pool-&gt;queue_capacity &amp;&amp; !pool-&gt;shutdown)
+        pthread_cond_wait(&amp;pool-&gt;cond_nonfull, &amp;pool-&gt;mutex);
+    if (pool-&gt;shutdown) {
+        pthread_mutex_unlock(&amp;pool-&gt;mutex);
+        return -1;
+    }
+    pool-&gt;queue[pool-&gt;tail].fn = task;
+    pool-&gt;queue[pool-&gt;tail].arg = arg;
+    pool-&gt;tail = (pool-&gt;tail + 1) % pool-&gt;queue_capacity;
+    pool-&gt;count++;
+    pthread_cond_signal(&amp;pool-&gt;cond_nonempty);
+    pthread_mutex_unlock(&amp;pool-&gt;mutex);
+#endif
+    return 0;
+}
+
+int thread_pool_queue_size(thread_pool_t *pool) {
+    int n;
+    if (!pool) return 0;
+#ifdef _WIN32
+    EnterCriticalSection(&amp;pool-&gt;mutex);
+    n = pool-&gt;count;
+    LeaveCriticalSection(&amp;pool-&gt;mutex);
+#else
+    pthread_mutex_lock(&amp;pool-&gt;mutex);
+    n = pool-&gt;count;
+    pthread_mutex_unlock(&amp;pool-&gt;mutex);
+#endif
+    return n;
+}
+
+void thread_pool_destroy(thread_pool_t *pool) {
+    int i;
+    if (!pool) return;
+#ifdef _WIN32
+    EnterCriticalSection(&amp;pool-&gt;mutex);
+    pool-&gt;shutdown = 1;
+    LeaveCriticalSection(&amp;pool-&gt;mutex);
+    for (i = 0; i &lt; pool-&gt;num_threads; i++)
+        ReleaseSemaphore(pool-&gt;sem_jobs, 1, NULL);
+    for (i = 0; i &lt; pool-&gt;num_threads; i++) {
+        WaitForSingleObject(pool-&gt;threads[i], INFINITE);
+        CloseHandle(pool-&gt;threads[i]);
+    }
+    CloseHandle(pool-&gt;sem_jobs);
+    CloseHandle(pool-&gt;sem_slots);
+    DeleteCriticalSection(&amp;pool-&gt;mutex);
+#else
+    pthread_mutex_lock(&amp;pool-&gt;mutex);
+    pool-&gt;shutdown = 1;
+    pthread_cond_broadcast(&amp;pool-&gt;cond_nonempty);
+    pthread_mutex_unlock(&amp;pool-&gt;mutex);
+    for (i = 0; i &lt; pool-&gt;num_threads; i++)
+        pthread_join(pool-&gt;threads[i], NULL);
+    pthread_mutex_destroy(&amp;pool-&gt;mutex);
+    pthread_cond_destroy(&amp;pool-&gt;cond_nonempty);
+    pthread_cond_destroy(&amp;pool-&gt;cond_nonfull);
+#endif
+    free(pool-&gt;queue);
+    free(pool-&gt;threads);
+    free(pool);
+}
+</code></pre></div>
+<div class="source-file-block mb-4">
+<div class="d-flex flex-wrap justify-content-between align-items-center gap-2 mb-2"><span class="source-file-title"><i class="bi bi-file-earmark-code"></i> 패키지 RAM 캐시 (전체) <small class="text-secondary">(deploy_common/package_cache.c)</small></span><span><span class="badge bg-secondary">공통</span> <span class="badge bg-dark">c</span> <span class="badge bg-outline-light text-light border">76 lines</span></span></div>
+<div class="flow-diagrams mb-3"><div class="flow-block mb-2"><button class="btn btn-sm btn-flow-toggle w-100 text-start d-flex justify-content-between" type="button" data-bs-toggle="collapse" data-bs-target="#flow-c-5-3-2"><span><i class="bi bi-diagram-3"></i> 패키지 캐시 로드 플로우차트</span><i class="bi bi-chevron-down"></i></button><div class="collapse show" id="flow-c-5-3-2"><div class="mermaid flow-mermaid">flowchart TD
+  A[package_cache_load] --> B[update_file 목록 순회]
+  B --> C[load_one fopen fread]
+  C --> D[malloc data 저장]
+  D --> E[migration_file 동일]
+  E --> F[cache.loaded=1]
+  F --> G[send_cached 시 디스크없음]</div></div></div></div>
+<div class="symbol-guide mb-2"><button class="btn btn-sm btn-outline-light w-100 text-start d-flex justify-content-between" type="button" data-bs-toggle="collapse" data-bs-target="#sym-5-3-2"><span><i class="bi bi-journal-text"></i> 변수·함수 설명 (4개)</span><i class="bi bi-chevron-down"></i></button><div class="collapse show symbol-collapse" id="sym-5-3-2"><table class="table table-sm table-symbol mb-0"><thead><tr><th>이름</th><th>구분</th><th>설명</th></tr></thead><tbody>
+<tr><td><code>cached_file_t</code></td><td><span class="badge sym-kind">구조체</span></td><td>파일명, data 포인터, size.</td></tr>
+<tr><td><code>package_cache_load()</code></td><td><span class="badge sym-kind">함수</span></td><td>update/migration 파일을 malloc으로 읽어 캐시.</td></tr>
+<tr><td><code>package_cache_free()</code></td><td><span class="badge sym-kind">함수</span></td><td>캐시 메모리 해제.</td></tr>
+<tr><td><code>load_one()</code></td><td><span class="badge sym-kind">함수</span></td><td>단일 파일을 메모리에 로드.</td></tr>
+</tbody></table></div></div>
+<p class="source-hint small text-secondary mb-1"><i class="bi bi-folder2-open"></i> 프로젝트에서 불러온 원본 소스입니다.</p><pre class="source-raw" data-source-file="deploy_common/package_cache.c"><code>/*
+ * package_cache.c — 배포 파일을 서버 기동 시 RAM에 미리 읽어 둠
+ * 이유: 1000대 클라이언트가 동시에 받을 때 디스크 읽기 병목을 줄이기 위함
+ */
+#include &quot;package_cache.h&quot;
+#include &lt;stdio.h&gt;
+#include &lt;stdlib.h&gt;
+#include &lt;string.h&gt;
+
+/* packages/ 폴더 안의 파일 하나를 메모리로 읽기 */
+static int load_one(cached_file_t *out, const char *dir, const char *fname) {
+    char path[MAX_PATH_LEN];
+    FILE *f;
+    long sz;
+
+    snprintf(path, sizeof(path), &quot;%s/%s&quot;, dir, fname);
+    strncpy(out-&gt;name, fname, MAX_PATH_LEN - 1);
+    out-&gt;name[MAX_PATH_LEN - 1] = &#x27;\0&#x27;;
+
+    f = fopen(path, &quot;rb&quot;);
+    if (!f) return -1;
+    fseek(f, 0, SEEK_END);
+    sz = ftell(f);
+    if (sz &lt; 0) { fclose(f); return -1; }
+    rewind(f);
+    out-&gt;data = (char *)malloc((size_t)sz + 1);
+    if (!out-&gt;data) { fclose(f); return -1; }
+    if (fread(out-&gt;data, 1, (size_t)sz, f) != (size_t)sz) {
+        free(out-&gt;data);
+        out-&gt;data = NULL;
+        fclose(f);
+        return -1;
+    }
+    out-&gt;data[sz] = &#x27;\0&#x27;;
+    out-&gt;size = sz;
+    fclose(f);
+    return 0;
+}
+
+/* 설정에 적힌 update_file_*, migration_file_* 전부 캐시에 로드 */
+int package_cache_load(package_cache_t *cache, const deploy_config_t *cfg) {
+    int i;
+    memset(cache, 0, sizeof(*cache));
+    for (i = 0; i &lt; cfg-&gt;update_file_count; i++) {
+        if (load_one(&amp;cache-&gt;update[cache-&gt;update_count], cfg-&gt;package_dir,
+                     cfg-&gt;update_files[i]) == 0)
+            cache-&gt;update_count++;
+    }
+    for (i = 0; i &lt; cfg-&gt;migration_file_count; i++) {
+        if (load_one(&amp;cache-&gt;migration[cache-&gt;migration_count], cfg-&gt;package_dir,
+                     cfg-&gt;migration_files[i]) == 0)
+            cache-&gt;migration_count++;
+    }
+    cache-&gt;loaded = (cache-&gt;update_count &gt; 0 || cache-&gt;migration_count &gt; 0);
+    return cache-&gt;loaded ? 0 : -1;
+}
+
+/* 서버 종료 시 malloc 한 메모리 해제 */
+void package_cache_free(package_cache_t *cache) {
+    int i;
+    for (i = 0; i &lt; cache-&gt;update_count; i++)
+        free(cache-&gt;update[i].data);
+    for (i = 0; i &lt; cache-&gt;migration_count; i++)
+        free(cache-&gt;migration[i].data);
+    memset(cache, 0, sizeof(*cache));
+}
+
+const cached_file_t *package_cache_update(const package_cache_t *c, int i) {
+    if (i &lt; 0 || i &gt;= c-&gt;update_count) return NULL;
+    return &amp;c-&gt;update[i];
+}
+
+const cached_file_t *package_cache_migration(const package_cache_t *c, int i) {
+    if (i &lt; 0 || i &gt;= c-&gt;migration_count) return NULL;
+    return &amp;c-&gt;migration[i];
+}
+</code></pre></div>
+<div class="source-file-block mb-4">
+<div class="d-flex flex-wrap justify-content-between align-items-center gap-2 mb-2"><span class="source-file-title"><i class="bi bi-file-earmark-code"></i> 부하 테스트 — Ubuntu/Linux <small class="text-secondary">(scripts/load_test.sh)</small></span><span><span class="badge bg-success">Ubuntu / Linux</span> <span class="badge bg-dark">bash</span> <span class="badge bg-outline-light text-light border">35 lines</span></span></div>
+<div class="flow-diagrams mb-3"><div class="flow-block mb-2"><button class="btn btn-sm btn-flow-toggle w-100 text-start d-flex justify-content-between" type="button" data-bs-toggle="collapse" data-bs-target="#flow-c-5-3-3"><span><i class="bi bi-diagram-3"></i> 부하 테스트 플로우차트</span><i class="bi bi-chevron-down"></i></button><div class="collapse show" id="flow-c-5-3-3"><div class="mermaid flow-mermaid">flowchart TD
+  A[load_test.sh] --> B[COUNT번 반복]
+  B --> C{PARALLEL 미만?}
+  C -->|Yes| D[백그라운드 deploy_client]
+  D --> E[wait 완료대기]
+  E --> F[ok/fail 집계]</div></div></div></div>
+<div class="symbol-guide mb-2"><button class="btn btn-sm btn-outline-light w-100 text-start d-flex justify-content-between" type="button" data-bs-toggle="collapse" data-bs-target="#sym-5-3-3"><span><i class="bi bi-journal-text"></i> 변수·함수 설명 (3개)</span><i class="bi bi-chevron-down"></i></button><div class="collapse show symbol-collapse" id="sym-5-3-3"><table class="table table-sm table-symbol mb-0"><thead><tr><th>이름</th><th>구분</th><th>설명</th></tr></thead><tbody>
+<tr><td><code>HOST</code></td><td><span class="badge sym-kind">변수</span></td><td>배포 서버 IP. Ubuntu 서버 private IP 지정.</td></tr>
+<tr><td><code>PARALLEL</code></td><td><span class="badge sym-kind">변수</span></td><td>동시 실행 클라이언트 프로세스 수.</td></tr>
+<tr><td><code>deploy_client</code></td><td><span class="badge sym-kind">실행</span></td><td>make로 빌드한 Linux 클라이언트 바이너리.</td></tr>
+</tbody></table></div></div>
+<p class="source-hint small text-secondary mb-1"><i class="bi bi-folder2-open"></i> 프로젝트에서 불러온 원본 소스입니다.</p><pre class="source-raw" data-source-file="scripts/load_test.sh"><code>#!/bin/bash
+# Ubuntu/Linux 동시 접속 부하 테스트
+# 사용: ./load_test.sh [서버IP] [토큰] [횟수] [동시수]
+set -e
+HOST=&quot;${1:-127.0.0.1}&quot;
+TOKEN=&quot;${2:-UPD-DEMO-UPDATE-001}&quot;
+COUNT=&quot;${3:-30}&quot;
+PARALLEL=&quot;${4:-15}&quot;
+ROOT=&quot;$(cd &quot;$(dirname &quot;$0&quot;)/..&quot; &amp;&amp; pwd)&quot;
+CLIENT=&quot;$ROOT/deploy_client/deploy_client&quot;
+CONF=&quot;$ROOT/config/deploy_targets.conf&quot;
+
+if [ ! -x &quot;$CLIENT&quot; ]; then
+  echo &quot;먼저 프로젝트 루트에서: make&quot;
+  exit 1
+fi
+
+ok=0
+fail=0
+for i in $(seq 1 &quot;$COUNT&quot;); do
+  while [ &quot;$(jobs -rp | wc -l)&quot; -ge &quot;$PARALLEL&quot; ]; do
+    wait -n 2&gt;/dev/null || wait
+  done
+  (
+    if &quot;$CLIENT&quot; &quot;$HOST&quot; &quot;$TOKEN&quot; update &quot;$CONF&quot; &gt;/dev/null 2&gt;&amp;1; then
+      echo ok
+    else
+      echo fail
+    fi
+  ) &amp;
+done
+wait
+for r in $(jobs -p); do wait &quot;$r&quot; 2&gt;/dev/null; done
+
+echo &quot;Load test done: total=$COUNT (see ok/fail above)&quot;
+</code></pre></div>
+<div class="source-file-block mb-4">
+<div class="d-flex flex-wrap justify-content-between align-items-center gap-2 mb-2"><span class="source-file-title"><i class="bi bi-file-earmark-code"></i> 부하 테스트 — Windows 클라이언트 <small class="text-secondary">(scripts/load_test.ps1)</small></span><span><span class="badge bg-info text-dark">Windows</span> <span class="badge bg-dark">powershell</span> <span class="badge bg-outline-light text-light border">32 lines</span></span></div>
+<div class="flow-diagrams mb-3"><div class="flow-block mb-2"><button class="btn btn-sm btn-flow-toggle w-100 text-start d-flex justify-content-between" type="button" data-bs-toggle="collapse" data-bs-target="#flow-c-5-3-4"><span><i class="bi bi-diagram-3"></i> Windows 부하 테스트</span><i class="bi bi-chevron-down"></i></button><div class="collapse show" id="flow-c-5-3-4"><div class="mermaid flow-mermaid">flowchart TD
+  A[load_test.ps1] --> B[Start-Job N개]
+  B --> C[deploy_client.exe]
+  C --> D[Receive-Job]
+  D --> E[ok fail 출력]</div></div></div></div>
+<div class="symbol-guide mb-2"><button class="btn btn-sm btn-outline-light w-100 text-start d-flex justify-content-between" type="button" data-bs-toggle="collapse" data-bs-target="#sym-5-3-4"><span><i class="bi bi-journal-text"></i> 변수·함수 설명 (2개)</span><i class="bi bi-chevron-down"></i></button><div class="collapse show symbol-collapse" id="sym-5-3-4"><table class="table table-sm table-symbol mb-0"><thead><tr><th>이름</th><th>구분</th><th>설명</th></tr></thead><tbody>
+<tr><td><code>TargetHost</code></td><td><span class="badge sym-kind">매개변수</span></td><td>Ubuntu 서버 IP 주소.</td></tr>
+<tr><td><code>MaxParallel</code></td><td><span class="badge sym-kind">매개변수</span></td><td>PowerShell Start-Job 동시 수.</td></tr>
+</tbody></table></div></div>
+<p class="source-hint small text-secondary mb-1"><i class="bi bi-folder2-open"></i> 프로젝트에서 불러온 원본 소스입니다.</p><pre class="source-raw" data-source-file="scripts/load_test.ps1"><code># 동시 접속 부하 테스트 (기본 50, -Count 1000 으로 1000 연결 시뮬레이션)
+param(
+    [string]$TargetHost = &quot;127.0.0.1&quot;,
+    [string]$Token = &quot;UPD-DEMO-UPDATE-001&quot;,
+    [string]$Action = &quot;update&quot;,
+    [int]$Count = 50,
+    [int]$MaxParallel = 32
+)
+
+$client = Join-Path $PSScriptRoot &quot;..\deploy_client\deploy_client.exe&quot;
+$config = Join-Path $PSScriptRoot &quot;..\config\deploy_targets.conf&quot;
+$ok = 0; $fail = 0
+
+$jobs = @()
+for ($i = 1; $i -le $Count; $i++) {
+    while ((@(Get-Job -State Running)).Count -ge $MaxParallel) {
+        Receive-Job -Job (Wait-Job -Any) | Out-Null
+    }
+    $jobs += Start-Job -ScriptBlock {
+        param($c, $h, $t, $a, $cfg)
+        &amp; $c $h $t $a $cfg 2&gt;&amp;1 | Out-Null
+        return $LASTEXITCODE
+    } -ArgumentList $client, $TargetHost, $Token, $Action, $config
+}
+
+foreach ($j in $jobs) {
+    $code = Receive-Job -Job $j -Wait
+    if ($code -eq 0) { $ok++ } else { $fail++ }
+    Remove-Job $j
+}
+
+Write-Host &quot;Load test done: total=$Count ok=$ok fail=$fail&quot;
+</code></pre></div>
+</div></div></div></div></div><div class="section-block theory"><div class="d-flex align-items-center gap-2 mb-3"><span class="badge badge-theory"><i class="bi bi-book"></i> 이론</span><h4 class="h5 mb-0">5-3. 튜닝 가이드 (10분)</h4></div><div class="content-card section-body">
+<ul>
+  <li><code>worker_threads</code>: CPU 코어 수 × 1~2 (예: 8코어 → 16)</li>
+  <li><code>max_concurrent</code>: 메모리·대역폭 고려 (패키지 크기 × 동시 수)</li>
+  <li><code>listen_backlog</code>: OS SOMAXCONN 이하로</li>
+  <li>패키지가 수백 MB면 캐시 대신 CDN·증분 배포 검토 (심화)</li>
+</ul>
+</div></div>
+    </main>
+  </div>
+</div>
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
+<script src="assets/course.js"></script>
+<script src="assets/mermaid-init.js"></script>
+<script src="assets/mermaid-render.js"></script>
+</body>
+</html>

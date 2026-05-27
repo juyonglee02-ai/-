@@ -1,0 +1,660 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>2교시 — Flask 통합 배포관리 GUI — 통합 배포관리 수업자료</title>
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css" rel="stylesheet">
+  <link href="assets/course.css" rel="stylesheet">
+  <script src="https://cdn.jsdelivr.net/npm/mermaid@10.9.0/dist/mermaid.min.js"></script>
+</head>
+<body>
+<div class="container-fluid">
+  <div class="row">
+    <nav class="col-lg-2 course-nav py-3 d-none d-lg-block">
+      <h5 class="text-white px-3 mb-1"><i class="bi bi-mortarboard"></i> 수업자료</h5>
+      <p class="text-white-50 px-3 small mb-3">오프라인 · 6시간</p>
+      <a href="index.html" class=""><i class="bi bi-house"></i> 강의 홈</a>
+<a href="schedule.html" class=""><i class="bi bi-calendar3"></i> 시간표</a>
+<hr class="border-secondary mx-3">
+<a href="module-01.html" class=""><span class="module-num">1교시</span><br>배포관리 개요와 프로젝트 구조</a>
+<a href="module-02.html" class="active"><span class="module-num">2교시</span><br>Flask 통합 배포관리 GUI</a>
+<a href="module-03.html" class=""><span class="module-num">3교시</span><br>토큰 기반 인증과 설정 파일</a>
+<a href="module-04.html" class=""><span class="module-num">4교시</span><br>C 배포 서버·클라이언트와 프로토콜</a>
+<a href="module-05.html" class=""><span class="module-num">5교시</span><br>대규모 동시 접속 — 1000대 설계</a>
+<a href="module-06.html" class=""><span class="module-num">6교시</span><br>NTP 동기화와 종합 실습·평가</a>
+      <hr class="border-secondary mx-3">
+      <p class="text-white-50 px-3 small">프로젝트 실행 없이 브라우저로 열기</p>
+    </nav>
+    <main class="col-lg-10 py-4 px-4">
+      <div class="d-lg-none mb-3">
+        <select class="form-select" onchange="if(this.value)location.href=this.value">
+          <option value="index.html">강의 홈</option>
+          <option value="schedule.html">시간표</option>
+          <option value="module-01.html">1교시</option><option value="module-02.html">2교시</option><option value="module-03.html">3교시</option><option value="module-04.html">4교시</option><option value="module-05.html">5교시</option><option value="module-06.html">6교시</option>
+        </select>
+      </div>
+      
+<div class="sticky-top-bar">
+  <div class="d-flex justify-content-between flex-wrap gap-2"><a href="module-01.html" class="btn btn-sm btn-outline-secondary">← 이전</a><a href="module-03.html" class="btn btn-sm btn-primary">다음 →</a></div>
+  <div class="progress progress-module mt-2"><div class="progress-bar" style="width:33%"></div></div>
+</div>
+<div class="content-card">
+  <span class="badge bg-primary mb-2">60분</span>
+  <h1 class="h3">2교시. Flask 통합 배포관리 GUI</h1>
+  <h6 class="text-muted mt-3">학습 목표</h6><ul><li>Flask 앱의 화면별 기능을 설명할 수 있다</li><li>클라이언트 등록 및 배포 요청을 수행할 수 있다</li><li>업데이트 현황·통계 화면을 해석할 수 있다</li></ul>
+</div>
+<div class="section-block theory"><div class="d-flex align-items-center gap-2 mb-3"><span class="badge badge-theory"><i class="bi bi-book"></i> 이론</span><h4 class="h5 mb-0">2-1. MVC와 Flask 라우팅 (15분)</h4></div><div class="content-card section-body">
+<p>Flask 앱(<code>app.py</code>)은 URL 경로마다 함수(뷰)를 연결합니다.</p>
+<pre><code>@app.route("/clients")
+def clients():
+    client_list = Client.query.all()
+    return render_template("clients.html", clients=client_list)</code></pre>
+<ul>
+  <li><strong>Model</strong>: <code>models.py</code> — Client, Deployment, DeployToken …</li>
+  <li><strong>View</strong>: <code>templates/*.html</code> — Jinja2 템플릿</li>
+  <li><strong>Controller</strong>: <code>app.py</code> — 요청 처리·DB 조회</li>
+</ul>
+</div></div><div class="section-block demo"><div class="d-flex align-items-center gap-2 mb-3"><span class="badge badge-demo"><i class="bi bi-play-circle"></i> 시연</span><h4 class="h5 mb-0">2-2. 화면별 기능 시연 (15분)</h4></div><div class="content-card section-body">
+<table class="table table-sm table-striped">
+  <tr><th>메뉴</th><th>기능</th></tr>
+  <tr><td>대시보드</td><td>클라이언트 수, 성공/실패 배포 요약, 최근 이력</td></tr>
+  <tr><td>클라이언트 배포</td><td>대상 등록, 업데이트·마이그레이션·NTP 요청</td></tr>
+  <tr><td>토큰 형식 정의</td><td>UPD/MIG/NTP 패턴·접두사 GUI 설정</td></tr>
+  <tr><td>토큰 발급</td><td>일회용·다회용 토큰 생성</td></tr>
+  <tr><td>업데이트 현황</td><td>상태별 필터(pending/success/failed)</td></tr>
+  <tr><td>통계</td><td>Chart.js 일별·클라이언트별 그래프</td></tr>
+  <tr><td>서버 NTP</td><td>NTP 설정값·동기화 이력</td></tr>
+</table>
+</div></div><div class="section-block lab"><div class="d-flex align-items-center gap-2 mb-3"><span class="badge badge-lab"><i class="bi bi-tools"></i> 실습</span><h4 class="h5 mb-0">★ 실습 2: GUI로 첫 배포 요청 (20분)</h4></div><div class="content-card section-body">
+<ol>
+  <li><strong>클라이언트 배포</strong> → 이름 <code>lab-pc-01</code>, 호스트 <code>127.0.0.1</code>, 포트 <code>9900</code> 등록</li>
+  <li><strong>토큰 형식 정의</strong>에서 업데이트 토큰 패턴 확인 (예: <code>UPD-{client_id}-{random}</code>)</li>
+  <li>등록한 클라이언트에서 <strong>업데이트</strong> 클릭 → 버전 <code>1.0.1</code> 입력</li>
+  <li>발급된 토큰 문자열을 메모장에 복사</li>
+  <li><strong>업데이트 현황</strong>에서 상태 <code>pending</code> 확인</li>
+  <li><strong>토큰 발급</strong> 메뉴에서 동일 형식으로 토큰 1개 추가 발급해 보기</li>
+</ol>
+<div class="alert alert-warning"><strong>Tip</strong> 아직 C 클라이언트를 실행하지 않았으므로 상태는 pending입니다. 4교시에 완료 처리합니다.</div>
+<p class="text-muted small mb-0">전체 소스·함수 설명은 <strong>소스 보기</strong>를 펼치세요.</p>
+<div class="source-panel mt-3">
+<button class="btn btn-source-toggle w-100 d-flex justify-content-between align-items-center" type="button" data-bs-toggle="collapse" data-bs-target="#source-2-3" aria-expanded="false">
+<span><i class="bi bi-code-slash me-2"></i>소스 보기 (전체 2개 파일)</span>
+<span class="source-chevron"><i class="bi bi-chevron-down"></i></span></button>
+<div class="collapse source-collapse" id="source-2-3"><div class="source-inner">
+<div class="source-file-block mb-4">
+<div class="d-flex flex-wrap justify-content-between align-items-center gap-2 mb-2"><span class="source-file-title"><i class="bi bi-file-earmark-code"></i> DB 모델 전체 <small class="text-secondary">(flask_app/models.py)</small></span><span><span class="badge bg-secondary">공통</span> <span class="badge bg-dark">python</span> <span class="badge bg-outline-light text-light border">98 lines</span></span></div>
+<div class="flow-diagrams mb-3"><div class="flow-block mb-2"><button class="btn btn-sm btn-flow-toggle w-100 text-start d-flex justify-content-between" type="button" data-bs-toggle="collapse" data-bs-target="#flow-c-2-3-1"><span><i class="bi bi-diagram-3"></i> DB 테이블 관계</span><i class="bi bi-chevron-down"></i></button><div class="collapse show" id="flow-c-2-3-1"><div class="mermaid flow-mermaid">flowchart TD
+  TF[TokenFormat 토큰형식] --> DT[DeployToken 발급토큰]
+  CL[Client 클라이언트] --> DT
+  CL --> DP[Deployment 배포이력]
+  DT --> DP
+  NTP[NtpSyncLog NTP이력]</div></div></div></div>
+<div class="symbol-guide mb-2"><button class="btn btn-sm btn-outline-light w-100 text-start d-flex justify-content-between" type="button" data-bs-toggle="collapse" data-bs-target="#sym-2-3-1"><span><i class="bi bi-journal-text"></i> 변수·함수 설명 (6개)</span><i class="bi bi-chevron-down"></i></button><div class="collapse show symbol-collapse" id="sym-2-3-1"><table class="table table-sm table-symbol mb-0"><thead><tr><th>이름</th><th>구분</th><th>설명</th></tr></thead><tbody>
+<tr><td><code>TokenFormat</code></td><td><span class="badge sym-kind">클래스</span></td><td>토큰 접두사·패턴·유형(update/migration/ntp) 정의.</td></tr>
+<tr><td><code>DeployToken</code></td><td><span class="badge sym-kind">클래스</span></td><td>발급된 토큰 값, 만료, 사용 횟수.</td></tr>
+<tr><td><code>Client</code></td><td><span class="badge sym-kind">클래스</span></td><td>배포 대상 단말(이름, host, port, version, status).</td></tr>
+<tr><td><code>Deployment</code></td><td><span class="badge sym-kind">클래스</span></td><td>배포 이력(액션, 토큰, 상태, 버전).</td></tr>
+<tr><td><code>NtpSyncLog</code></td><td><span class="badge sym-kind">클래스</span></td><td>NTP 동기화 이력 저장.</td></tr>
+<tr><td><code>utcnow()</code></td><td><span class="badge sym-kind">함수</span></td><td>timezone-aware 현재 시각. DB 타임스탬프용.</td></tr>
+</tbody></table></div></div>
+<p class="source-hint small text-secondary mb-1"><i class="bi bi-folder2-open"></i> 프로젝트에서 불러온 원본 소스입니다.</p><pre class="source-raw" data-source-file="flask_app/models.py"><code>&quot;&quot;&quot;
+models.py — Flask 가 SQLite DB에 저장하는 테이블 정의 (ORM)
+
+초급자 팁:
+  - class 하나 = 테이블 하나
+  - db.Column = 컬럼(열)
+  - 웹 화면에서 등록한 클라이언트·토큰·배포 이력이 여기 구조로 저장됩니다.
+&quot;&quot;&quot;
+from datetime import datetime, timezone
+
+from flask_sqlalchemy import SQLAlchemy
+
+db = SQLAlchemy()
+
+
+def utcnow():
+    return datetime.now(timezone.utc)
+
+
+class TokenFormat(db.Model):
+    &quot;&quot;&quot;GUI에서 정의하는 토큰 사용 형식&quot;&quot;&quot;
+
+    __tablename__ = &quot;token_formats&quot;
+
+    id = db.Column(db.Integer, primary_key=True)
+    name = db.Column(db.String(64), nullable=False, unique=True)
+    token_type = db.Column(db.String(32), nullable=False)  # update, migration
+    prefix = db.Column(db.String(32), default=&quot;&quot;)
+    pattern = db.Column(db.String(256), default=&quot;&quot;)  # 예: UPDATE-{client}-{version}
+    description = db.Column(db.Text, default=&quot;&quot;)
+    enabled = db.Column(db.Boolean, default=True)
+    created_at = db.Column(db.DateTime, default=utcnow)
+
+    tokens = db.relationship(&quot;DeployToken&quot;, backref=&quot;format&quot;, lazy=True)
+
+
+class DeployToken(db.Model):
+    &quot;&quot;&quot;발급된 배포 토큰&quot;&quot;&quot;
+
+    __tablename__ = &quot;deploy_tokens&quot;
+
+    id = db.Column(db.Integer, primary_key=True)
+    token_value = db.Column(db.String(128), nullable=False, unique=True)
+    format_id = db.Column(db.Integer, db.ForeignKey(&quot;token_formats.id&quot;), nullable=False)
+    client_id = db.Column(db.Integer, db.ForeignKey(&quot;clients.id&quot;))
+    expires_at = db.Column(db.DateTime)
+    used_count = db.Column(db.Integer, default=0)
+    max_uses = db.Column(db.Integer, default=1)
+    active = db.Column(db.Boolean, default=True)
+    created_at = db.Column(db.DateTime, default=utcnow)
+
+
+class Client(db.Model):
+    &quot;&quot;&quot;배포 대상 클라이언트&quot;&quot;&quot;
+
+    __tablename__ = &quot;clients&quot;
+
+    id = db.Column(db.Integer, primary_key=True)
+    name = db.Column(db.String(64), nullable=False, unique=True)
+    host = db.Column(db.String(128), default=&quot;127.0.0.1&quot;)
+    port = db.Column(db.Integer, default=9900)
+    version = db.Column(db.String(32), default=&quot;1.0.0&quot;)
+    status = db.Column(db.String(32), default=&quot;idle&quot;)  # idle, updating, error, ok
+    last_seen = db.Column(db.DateTime)
+    created_at = db.Column(db.DateTime, default=utcnow)
+
+    deployments = db.relationship(&quot;Deployment&quot;, backref=&quot;client&quot;, lazy=True)
+    tokens = db.relationship(&quot;DeployToken&quot;, backref=&quot;client&quot;, lazy=True)
+
+
+class NtpSyncLog(db.Model):
+    &quot;&quot;&quot;서버/클라이언트 NTP 동기화 이력&quot;&quot;&quot;
+
+    __tablename__ = &quot;ntp_sync_logs&quot;
+
+    id = db.Column(db.Integer, primary_key=True)
+    source = db.Column(db.String(32), default=&quot;server&quot;)  # server, client
+    ntp_server = db.Column(db.String(128), default=&quot;&quot;)
+    status = db.Column(db.String(32), default=&quot;success&quot;)
+    detail = db.Column(db.Text, default=&quot;&quot;)
+    synced_at = db.Column(db.DateTime, default=utcnow)
+
+
+class Deployment(db.Model):
+    &quot;&quot;&quot;배포/업데이트 이력&quot;&quot;&quot;
+
+    __tablename__ = &quot;deployments&quot;
+
+    id = db.Column(db.Integer, primary_key=True)
+    client_id = db.Column(db.Integer, db.ForeignKey(&quot;clients.id&quot;), nullable=False)
+    action = db.Column(db.String(32), nullable=False)  # update, migration
+    token_used = db.Column(db.String(128))
+    version_from = db.Column(db.String(32))
+    version_to = db.Column(db.String(32))
+    status = db.Column(db.String(32), default=&quot;pending&quot;)  # pending, running, success, failed
+    message = db.Column(db.Text, default=&quot;&quot;)
+    started_at = db.Column(db.DateTime, default=utcnow)
+    finished_at = db.Column(db.DateTime)
+</code></pre></div>
+<div class="source-file-block mb-4">
+<div class="d-flex flex-wrap justify-content-between align-items-center gap-2 mb-2"><span class="source-file-title"><i class="bi bi-file-earmark-code"></i> Flask 앱 전체 (라우팅·비즈니스) <small class="text-secondary">(flask_app/app.py)</small></span><span><span class="badge bg-secondary">공통</span> <span class="badge bg-dark">python</span> <span class="badge bg-outline-light text-light border">407 lines</span></span></div>
+<div class="flow-diagrams mb-3"><div class="flow-block mb-2"><button class="btn btn-sm btn-flow-toggle w-100 text-start d-flex justify-content-between" type="button" data-bs-toggle="collapse" data-bs-target="#flow-c-2-3-2"><span><i class="bi bi-diagram-3"></i> Flask 요청 처리 플로우차트</span><i class="bi bi-chevron-down"></i></button><div class="collapse show" id="flow-c-2-3-2"><div class="mermaid flow-mermaid">flowchart TD
+  START[브라우저 HTTP 요청] --> ROUTE{URL 경로?}
+  ROUTE -->|/clients| C1[클라이언트 목록·등록]
+  ROUTE -->|/deploy| C2[배포요청·토큰발급]
+  ROUTE -->|/api/report| C3[C클라이언트 결과수신]
+  ROUTE -->|/course| C4[강의·수업자료]
+  C2 --> DB[(SQLite DB)]
+  C3 --> DB
+  C1 --> DB</div></div></div><div class="flow-block mb-2"><button class="btn btn-sm btn-flow-toggle w-100 text-start d-flex justify-content-between" type="button" data-bs-toggle="collapse" data-bs-target="#flow-s-2-3-2"><span><i class="bi bi-arrow-left-right"></i> 배포 요청 시퀀스 흐름도</span><i class="bi bi-chevron-down"></i></button><div class="collapse show" id="flow-s-2-3-2"><div class="mermaid flow-mermaid">sequenceDiagram
+  participant U as 관리자 브라우저
+  participant F as Flask app.py
+  participant D as SQLite
+  participant S as C배포서버
+  U->>F: POST deploy
+  F->>D: 토큰·Deployment 저장
+  F-->>U: 토큰 문자열 표시
+  Note over U,S: 관리자가 tokens.conf에 토큰 등록
+  participant C as C클라이언트
+  C->>S: TOKEN update
+  S-->>C: FILE 전송
+  C->>F: POST api report
+  F->>D: status success 갱신</div></div></div></div>
+<div class="symbol-guide mb-2"><button class="btn btn-sm btn-outline-light w-100 text-start d-flex justify-content-between" type="button" data-bs-toggle="collapse" data-bs-target="#sym-2-3-2"><span><i class="bi bi-journal-text"></i> 변수·함수 설명 (7개)</span><i class="bi bi-chevron-down"></i></button><div class="collapse show symbol-collapse" id="sym-2-3-2"><table class="table table-sm table-symbol mb-0"><thead><tr><th>이름</th><th>구분</th><th>설명</th></tr></thead><tbody>
+<tr><td><code>app</code></td><td><span class="badge sym-kind">객체</span></td><td>Flask 애플리케이션 인스턴스.</td></tr>
+<tr><td><code>init_db()</code></td><td><span class="badge sym-kind">함수</span></td><td>테이블 생성 및 기본 토큰 형식 시드.</td></tr>
+<tr><td><code>generate_token_value()</code></td><td><span class="badge sym-kind">함수</span></td><td>패턴 변수({prefix},{client_id},{random} 등)로 토큰 문자열 생성.</td></tr>
+<tr><td><code>deploy_client()</code></td><td><span class="badge sym-kind">함수</span></td><td>클라이언트 배포 요청 POST 처리, 토큰·Deployment 생성.</td></tr>
+<tr><td><code>api_report()</code></td><td><span class="badge sym-kind">함수</span></td><td>C 클라이언트가 POST하는 배포 결과 수신 API.</td></tr>
+<tr><td><code>course_module()</code></td><td><span class="badge sym-kind">함수</span></td><td>강의 모듈 페이지. enrich_module_sources로 소스 주입.</td></tr>
+<tr><td><code>_read_deploy_conf()</code></td><td><span class="badge sym-kind">함수</span></td><td>deploy_targets.conf 파싱(서버 NTP 화면용).</td></tr>
+</tbody></table></div></div>
+<p class="source-hint small text-secondary mb-1"><i class="bi bi-folder2-open"></i> 프로젝트에서 불러온 원본 소스입니다.</p><pre class="source-raw" data-source-file="flask_app/app.py"><code>import os
+import secrets
+import json
+from datetime import datetime, timedelta, timezone
+
+from flask import Flask, render_template, request, redirect, url_for, flash, jsonify
+from sqlalchemy import func
+
+from config import Config, PROJECT_ROOT
+from models import db, TokenFormat, DeployToken, Client, Deployment, NtpSyncLog, utcnow
+from course_content import COURSE_META, MODULES, SCHEDULE
+from course_loader import enrich_module_sources
+
+app = Flask(__name__)
+app.config.from_object(Config)
+db.init_app(app)
+
+os.makedirs(app.config[&quot;DEPLOY_PACKAGES_DIR&quot;], exist_ok=True)
+
+
+def init_db():
+    with app.app_context():
+        db.create_all()
+        if TokenFormat.query.count() == 0:
+            defaults = [
+                TokenFormat(
+                    name=&quot;업데이트 토큰&quot;,
+                    token_type=&quot;update&quot;,
+                    prefix=&quot;UPD&quot;,
+                    pattern=&quot;UPD-{client_id}-{version}-{random}&quot;,
+                    description=&quot;클라이언트 소프트웨어 업데이트에 사용&quot;,
+                ),
+                TokenFormat(
+                    name=&quot;마이그레이션 토큰&quot;,
+                    token_type=&quot;migration&quot;,
+                    prefix=&quot;MIG&quot;,
+                    pattern=&quot;MIG-{client_id}-{random}&quot;,
+                    description=&quot;DB/설정 마이그레이션에 사용&quot;,
+                ),
+                TokenFormat(
+                    name=&quot;NTP 동기화 토큰&quot;,
+                    token_type=&quot;ntp&quot;,
+                    prefix=&quot;NTP&quot;,
+                    pattern=&quot;NTP-{client_id}-{random}&quot;,
+                    description=&quot;서버/클라이언트 시각 NTP 동기화&quot;,
+                ),
+            ]
+            db.session.add_all(defaults)
+            db.session.commit()
+
+
+def generate_token_value(fmt: TokenFormat, client: Client | None = None) -&gt; str:
+    random_part = secrets.token_hex(4).upper()
+    version = client.version if client else &quot;0.0.0&quot;
+    client_id = str(client.id) if client else &quot;0&quot;
+    pattern = fmt.pattern or &quot;{prefix}-{random}&quot;
+    value = (
+        pattern.replace(&quot;{prefix}&quot;, fmt.prefix or &quot;&quot;)
+        .replace(&quot;{client_id}&quot;, client_id)
+        .replace(&quot;{version}&quot;, version)
+        .replace(&quot;{random}&quot;, random_part)
+    )
+    return value.strip(&quot;-&quot;)
+
+
+def _get_module(module_id):
+    for m in MODULES:
+        if m[&quot;id&quot;] == module_id:
+            return m
+    return None
+
+
+@app.route(&quot;/course&quot;)
+def course_index():
+    return render_template(
+        &quot;course/index.html&quot;,
+        meta=COURSE_META,
+        modules=MODULES,
+        all_modules=MODULES,
+    )
+
+
+@app.route(&quot;/course/schedule&quot;)
+def course_schedule():
+    modules_by_id = {m[&quot;id&quot;]: m for m in MODULES}
+    return render_template(
+        &quot;course/schedule.html&quot;,
+        schedule=SCHEDULE,
+        modules_by_id=modules_by_id,
+        all_modules=MODULES,
+    )
+
+
+@app.route(&quot;/course/module/&lt;int:module_id&gt;&quot;)
+def course_module(module_id):
+    raw = _get_module(module_id)
+    if not raw:
+        flash(&quot;존재하지 않는 교시입니다.&quot;, &quot;danger&quot;)
+        return redirect(url_for(&quot;course_index&quot;))
+    module = enrich_module_sources(raw, Config.PROJECT_ROOT)
+    prev_id = module_id - 1 if module_id &gt; 1 else None
+    next_id = module_id + 1 if module_id &lt; len(MODULES) else None
+    return render_template(
+        &quot;course/module.html&quot;,
+        module=module,
+        prev_id=prev_id,
+        next_id=next_id,
+        total_modules=len(MODULES),
+        all_modules=MODULES,
+    )
+
+
+@app.route(&quot;/&quot;)
+def index():
+    total_clients = Client.query.count()
+    total_deployments = Deployment.query.count()
+    success_count = Deployment.query.filter_by(status=&quot;success&quot;).count()
+    failed_count = Deployment.query.filter_by(status=&quot;failed&quot;).count()
+    recent = (
+        Deployment.query.order_by(Deployment.started_at.desc()).limit(10).all()
+    )
+    return render_template(
+        &quot;index.html&quot;,
+        total_clients=total_clients,
+        total_deployments=total_deployments,
+        success_count=success_count,
+        failed_count=failed_count,
+        recent=recent,
+    )
+
+
+@app.route(&quot;/tokens/formats&quot;)
+def token_formats():
+    formats = TokenFormat.query.order_by(TokenFormat.id).all()
+    return render_template(&quot;token_formats.html&quot;, formats=formats)
+
+
+@app.route(&quot;/tokens/formats/add&quot;, methods=[&quot;POST&quot;])
+def add_token_format():
+    fmt = TokenFormat(
+        name=request.form[&quot;name&quot;],
+        token_type=request.form[&quot;token_type&quot;],
+        prefix=request.form.get(&quot;prefix&quot;, &quot;&quot;),
+        pattern=request.form.get(&quot;pattern&quot;, &quot;&quot;),
+        description=request.form.get(&quot;description&quot;, &quot;&quot;),
+        enabled=&quot;enabled&quot; in request.form,
+    )
+    db.session.add(fmt)
+    db.session.commit()
+    flash(&quot;토큰 형식이 추가되었습니다.&quot;, &quot;success&quot;)
+    return redirect(url_for(&quot;token_formats&quot;))
+
+
+@app.route(&quot;/tokens/formats/&lt;int:fmt_id&gt;/edit&quot;, methods=[&quot;POST&quot;])
+def edit_token_format(fmt_id):
+    fmt = TokenFormat.query.get_or_404(fmt_id)
+    fmt.name = request.form[&quot;name&quot;]
+    fmt.token_type = request.form[&quot;token_type&quot;]
+    fmt.prefix = request.form.get(&quot;prefix&quot;, &quot;&quot;)
+    fmt.pattern = request.form.get(&quot;pattern&quot;, &quot;&quot;)
+    fmt.description = request.form.get(&quot;description&quot;, &quot;&quot;)
+    fmt.enabled = &quot;enabled&quot; in request.form
+    db.session.commit()
+    flash(&quot;토큰 형식이 수정되었습니다.&quot;, &quot;success&quot;)
+    return redirect(url_for(&quot;token_formats&quot;))
+
+
+@app.route(&quot;/tokens&quot;)
+def tokens():
+    token_list = DeployToken.query.order_by(DeployToken.created_at.desc()).all()
+    formats = TokenFormat.query.filter_by(enabled=True).all()
+    clients = Client.query.all()
+    return render_template(
+        &quot;tokens.html&quot;, tokens=token_list, formats=formats, clients=clients
+    )
+
+
+@app.route(&quot;/tokens/issue&quot;, methods=[&quot;POST&quot;])
+def issue_token():
+    fmt = TokenFormat.query.get_or_404(int(request.form[&quot;format_id&quot;]))
+    client = None
+    if request.form.get(&quot;client_id&quot;):
+        client = Client.query.get(int(request.form[&quot;client_id&quot;]))
+    value = generate_token_value(fmt, client)
+    expires_days = int(request.form.get(&quot;expires_days&quot;, 7))
+    token = DeployToken(
+        token_value=value,
+        format_id=fmt.id,
+        client_id=client.id if client else None,
+        expires_at=utcnow() + timedelta(days=expires_days),
+        max_uses=int(request.form.get(&quot;max_uses&quot;, 1)),
+    )
+    db.session.add(token)
+    db.session.commit()
+    flash(f&quot;토큰 발급: {value}&quot;, &quot;success&quot;)
+    return redirect(url_for(&quot;tokens&quot;))
+
+
+@app.route(&quot;/clients&quot;)
+def clients():
+    client_list = Client.query.order_by(Client.name).all()
+    return render_template(&quot;clients.html&quot;, clients=client_list)
+
+
+@app.route(&quot;/clients/add&quot;, methods=[&quot;POST&quot;])
+def add_client():
+    client = Client(
+        name=request.form[&quot;name&quot;],
+        host=request.form.get(&quot;host&quot;, &quot;127.0.0.1&quot;),
+        port=int(request.form.get(&quot;port&quot;, 9900)),
+        version=request.form.get(&quot;version&quot;, &quot;1.0.0&quot;),
+    )
+    db.session.add(client)
+    db.session.commit()
+    flash(&quot;클라이언트가 등록되었습니다.&quot;, &quot;success&quot;)
+    return redirect(url_for(&quot;clients&quot;))
+
+
+@app.route(&quot;/clients/&lt;int:client_id&gt;/deploy&quot;, methods=[&quot;POST&quot;])
+def deploy_client(client_id):
+    client = Client.query.get_or_404(client_id)
+    action = request.form.get(&quot;action&quot;, &quot;update&quot;)
+    fmt = TokenFormat.query.filter_by(token_type=action, enabled=True).first()
+    if not fmt:
+        flash(f&quot;{action} 토큰 형식이 없습니다.&quot;, &quot;danger&quot;)
+        return redirect(url_for(&quot;clients&quot;))
+
+    token_value = generate_token_value(fmt, client)
+    token = DeployToken(
+        token_value=token_value,
+        format_id=fmt.id,
+        client_id=client.id,
+        expires_at=utcnow() + timedelta(hours=24),
+        max_uses=1,
+    )
+    db.session.add(token)
+
+    deployment = Deployment(
+        client_id=client.id,
+        action=action,
+        token_used=token_value,
+        version_from=client.version,
+        version_to=request.form.get(&quot;version_to&quot;, client.version),
+        status=&quot;pending&quot;,
+        message=&quot;배포 대기 중 (C 클라이언트에서 토큰으로 실행)&quot;,
+    )
+    client.status = &quot;updating&quot;
+    db.session.add(deployment)
+    db.session.commit()
+    flash(f&quot;배포 요청 생성. 토큰: {token_value}&quot;, &quot;success&quot;)
+    return redirect(url_for(&quot;clients&quot;))
+
+
+@app.route(&quot;/deployments&quot;)
+def deployments():
+    status_filter = request.args.get(&quot;status&quot;, &quot;&quot;)
+    q = Deployment.query
+    if status_filter:
+        q = q.filter_by(status=status_filter)
+    items = q.order_by(Deployment.started_at.desc()).all()
+    return render_template(
+        &quot;deployments.html&quot;, deployments=items, status_filter=status_filter
+    )
+
+
+@app.route(&quot;/api/stats/deployments&quot;)
+def api_stats_deployments():
+    &quot;&quot;&quot;업데이트 현황 통계 (일별)&quot;&quot;&quot;
+    rows = (
+        db.session.query(
+            func.date(Deployment.started_at).label(&quot;day&quot;),
+            Deployment.status,
+            func.count(Deployment.id),
+        )
+        .group_by(func.date(Deployment.started_at), Deployment.status)
+        .all()
+    )
+    days = sorted({str(r.day) for r in rows if r.day})
+    statuses = [&quot;success&quot;, &quot;failed&quot;, &quot;pending&quot;, &quot;running&quot;]
+    datasets = {s: [0] * len(days) for s in statuses}
+    for r in rows:
+        if r.day:
+            idx = days.index(str(r.day))
+            if r.status in datasets:
+                datasets[r.status][idx] = r[2]
+    return jsonify({&quot;labels&quot;: days, &quot;datasets&quot;: datasets})
+
+
+@app.route(&quot;/api/stats/clients&quot;)
+def api_stats_clients():
+    &quot;&quot;&quot;클라이언트 배포 현황 통계&quot;&quot;&quot;
+    clients = Client.query.all()
+    labels = [c.name for c in clients]
+    success = []
+    failed = []
+    for c in clients:
+        success.append(
+            Deployment.query.filter_by(client_id=c.id, status=&quot;success&quot;).count()
+        )
+        failed.append(
+            Deployment.query.filter_by(client_id=c.id, status=&quot;failed&quot;).count()
+        )
+    status_counts = {}
+    for c in clients:
+        status_counts[c.status] = status_counts.get(c.status, 0) + 1
+    return jsonify(
+        {
+            &quot;labels&quot;: labels,
+            &quot;success&quot;: success,
+            &quot;failed&quot;: failed,
+            &quot;status_distribution&quot;: status_counts,
+        }
+    )
+
+
+@app.route(&quot;/stats&quot;)
+def stats():
+    return render_template(&quot;stats.html&quot;)
+
+
+def _read_deploy_conf():
+    &quot;&quot;&quot;deploy_targets.conf 키=값 파싱&quot;&quot;&quot;
+    conf = {}
+    path = app.config.get(&quot;DEPLOY_TARGETS_CONFIG&quot;)
+    if not path or not os.path.isfile(path):
+        return conf
+    with open(path, encoding=&quot;utf-8&quot;) as f:
+        for line in f:
+            line = line.strip()
+            if not line or line.startswith(&quot;#&quot;) or &quot;=&quot; not in line:
+                continue
+            k, v = line.split(&quot;=&quot;, 1)
+            conf[k.strip()] = v.strip()
+    return conf
+
+
+@app.route(&quot;/server/ntp&quot;)
+def server_ntp():
+    conf = _read_deploy_conf()
+    logs = NtpSyncLog.query.order_by(NtpSyncLog.synced_at.desc()).limit(20).all()
+    return render_template(&quot;server_ntp.html&quot;, conf=conf, logs=logs)
+
+
+@app.route(&quot;/api/ntp/log&quot;, methods=[&quot;POST&quot;])
+def api_ntp_log():
+    data = request.get_json(force=True, silent=True) or {}
+    log = NtpSyncLog(
+        source=data.get(&quot;source&quot;, &quot;server&quot;),
+        ntp_server=data.get(&quot;ntp_server&quot;, &quot;&quot;),
+        status=data.get(&quot;status&quot;, &quot;success&quot;),
+        detail=data.get(&quot;detail&quot;, &quot;&quot;),
+    )
+    db.session.add(log)
+    db.session.commit()
+    return jsonify({&quot;ok&quot;: True})
+
+
+@app.route(&quot;/api/report&quot;, methods=[&quot;POST&quot;])
+def api_report():
+    &quot;&quot;&quot;C 클라이언트/서버에서 배포 결과 보고&quot;&quot;&quot;
+    data = request.get_json(force=True, silent=True) or {}
+    token_value = data.get(&quot;token&quot;, &quot;&quot;)
+    status = data.get(&quot;status&quot;, &quot;success&quot;)
+    message = data.get(&quot;message&quot;, &quot;&quot;)
+    version = data.get(&quot;version&quot;, &quot;&quot;)
+
+    if &quot;ntp&quot; in message.lower() or data.get(&quot;action&quot;) == &quot;ntp&quot;:
+        db.session.add(
+            NtpSyncLog(
+                source=&quot;client&quot;,
+                ntp_server=data.get(&quot;ntp_server&quot;, &quot;&quot;),
+                status=status,
+                detail=message,
+            )
+        )
+
+    token = DeployToken.query.filter_by(token_value=token_value, active=True).first()
+    if token:
+        token.used_count += 1
+        if token.used_count &gt;= token.max_uses:
+            token.active = False
+
+    deployment = (
+        Deployment.query.filter_by(token_used=token_value, status=&quot;pending&quot;)
+        .order_by(Deployment.started_at.desc())
+        .first()
+    )
+    if deployment:
+        deployment.status = status
+        deployment.message = message
+        deployment.finished_at = utcnow()
+        if version:
+            deployment.version_to = version
+        client = Client.query.get(deployment.client_id)
+        if client:
+            client.status = &quot;ok&quot; if status == &quot;success&quot; else &quot;error&quot;
+            if version:
+                client.version = version
+            client.last_seen = utcnow()
+
+    db.session.commit()
+    return jsonify({&quot;ok&quot;: True})
+
+
+if __name__ == &quot;__main__&quot;:
+    init_db()
+    app.run(host=&quot;0.0.0.0&quot;, port=5000, debug=True)
+</code></pre></div>
+</div></div></div></div></div><div class="section-block theory"><div class="d-flex align-items-center gap-2 mb-3"><span class="badge badge-theory"><i class="bi bi-book"></i> 이론</span><h4 class="h5 mb-0">2-3. REST API와 결과 보고 (10분)</h4></div><div class="content-card section-body">
+<p>C 클라이언트는 배포 완료 후 Flask에 JSON을 POST합니다.</p>
+<pre><code>POST /api/report
+{"token":"UPD-...", "status":"success", "message":"update complete"}</code></pre>
+<p>강사 PC에서 PowerShell 테스트:</p>
+<pre><code>Invoke-RestMethod -Uri http://127.0.0.1:5000/api/report -Method POST `
+  -ContentType application/json `
+  -Body '{"token":"발급한토큰","status":"success","message":"test"}'</code></pre>
+<p>→ 업데이트 현황이 <code>success</code>로 바뀌는지 확인합니다.</p>
+</div></div>
+    </main>
+  </div>
+</div>
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
+<script src="assets/course.js"></script>
+<script src="assets/mermaid-init.js"></script>
+<script src="assets/mermaid-render.js"></script>
+</body>
+</html>
