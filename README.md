@@ -15,3 +15,20 @@
 본 프로젝트는 중앙 Flask 관리 콘솔과 C 언어 배포 에이전트로 이 과정을 자동화합니다.
 
 <img width="828" height="442" alt="image" src="https://github.com/user-attachments/assets/5ec0e250-2187-44ee-b6c5-21f39dd6efbc" />
+
+역할 분리
+
+  구성요소         기술                   역할
+통합 배포관리      flask        토큰.클라이언트,이력,통계,GUI
+배포 서버         C + TCP        토큰 검증,파일/NTP 응답
+배포 클라이언트      C          서버접속,수신,설치,결과보고
+
+프로젝트 디렉터리 구조
+
+E-updateSystem/
+├── flask_app/       
+├── deploy_server/   
+├── deploy_client/   
+├── deploy_common/   
+├── config/          
+└── packages/        ← 실제 배포할 파일
