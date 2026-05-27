@@ -13,3 +13,5 @@
 마이그레이션(Migration): DB 스키마·설정 형식 변경 적용
 
 본 프로젝트는 중앙 Flask 관리 콘솔과 C 언어 배포 에이전트로 이 과정을 자동화합니다.
+
+<img width="828" height="442" alt="image" src="https://github.com/user-attachments/assets/5ec0e250-2187-44ee-b6c5-21f39dd6efbc" />
